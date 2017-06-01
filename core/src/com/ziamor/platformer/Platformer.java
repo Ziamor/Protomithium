@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
@@ -15,6 +16,7 @@ import com.ziamor.platformer.Entities.Player.PlayerInputProcessor;
 
 public class Platformer extends ApplicationAdapter {
     public static float unitScale = 1 / 128f;
+    private final boolean debug = false;
     float width, height;
     int[] backgroundLayers = {0};
 
@@ -26,6 +28,7 @@ public class Platformer extends ApplicationAdapter {
     PlayerInputProcessor inputProcessor;
 
     Batch batch;
+    ShapeRenderer shapeRenderer;
     Texture playerSpriteSheet;
 
     CollisionHelper collisionHelper;
@@ -37,6 +40,7 @@ public class Platformer extends ApplicationAdapter {
         tiledMap = new TmxMapLoader().load("level1.tmx");
         tiledMapRenderer = new OrthogonalTiledMapRenderer(tiledMap, 1 / 128f);
         batch = tiledMapRenderer.getBatch();
+        shapeRenderer = new ShapeRenderer();
         camera = new OrthographicCamera();
         camera.setToOrtho(false, 25, 15);
         camera.update();
@@ -69,6 +73,11 @@ public class Platformer extends ApplicationAdapter {
         batch.begin();
         playerEntity.render(deltatime, batch);
         batch.end();
+
+        if (debug) {
+            shapeRenderer.setProjectionMatrix(batch.getProjectionMatrix());
+            playerEntity.debugRender(deltatime, shapeRenderer);
+        }
     }
 
     @Override
