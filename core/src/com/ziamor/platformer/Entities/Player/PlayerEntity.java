@@ -6,7 +6,12 @@ import com.badlogic.gdx.ai.fsm.StateMachine;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.maps.tiled.TiledMap;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.Array;
+import com.ziamor.platformer.CollisionHelper;
 import com.ziamor.platformer.Platformer;
 
 /**
@@ -14,9 +19,11 @@ import com.ziamor.platformer.Platformer;
  */
 public class PlayerEntity {
     final float maxX = 20f;
+    final float player_width = 128 * Platformer.unitScale, player_height = 256 * Platformer.unitScale;
     PlayerAnimation playerAnimation;
     Vector2 pos, vel;
     StateMachine<PlayerEntity, PlayerState> playerStateMachine;
+    Rectangle AABB;
 
     private boolean moveLeft, moveRight, jump, crouch;
     private float lastDirFacing;
@@ -25,12 +32,13 @@ public class PlayerEntity {
     public PlayerEntity(Texture spriteSheet, Vector2 start_pos) {
         this.pos = start_pos;
         this.vel = Vector2.Zero;
+        this.AABB = new Rectangle(pos.x, pos.y, player_width, player_height);
         this.playerAnimation = new PlayerAnimation(spriteSheet);
         this.playerStateMachine = new DefaultStateMachine<PlayerEntity, PlayerState>(this, PlayerState.IDLE, PlayerState.GLOBAL_STATE);
-        lastDirFacing = 1;
+        this.lastDirFacing = 1;
     }
 
-    public void update(float deltatime) {
+    public void update(CollisionHelper collisionHelper, float deltatime) {
         playerStateMachine.update();
 
         // Handle movement allong the x-axis
@@ -55,9 +63,14 @@ public class PlayerEntity {
             vel.y += 1000 * deltatime;
         }
 
+        // Check for collisions
+        Rectangle collRegion = new Rectangle();
+        collRegion.x = Math.min(pos.x, pos.x + vel.x);
+        Array<Rectangle> possibleCollisions = collisionHelper.getPossibleCollisions(null, "collisions");
+
         //Update the new position
-        pos.x += Platformer.unitScale * vel.x;
-        pos.y += Platformer.unitScale * vel.y;
+        pos.x += vel.x;
+        pos.y += vel.y;
     }
 
     public void tryToJump() {
@@ -79,9 +92,13 @@ public class PlayerEntity {
         float width = currentFrame.getRegionWidth() * Platformer.unitScale;
         float dir = getDirFaceing();
 
+        // Convert the position vector to the right scale
+        float x = Platformer.unitScale * pos.x;
+        float y = Platformer.unitScale * pos.y;
+
         // If the player is facing to the left, scale the animation frame to be negative to flip it.
         // Also the position of the frame needs to be shifted to the right by the width of the frame
-        batch.draw(currentFrame, dir < 0 ? pos.x + width : pos.x, pos.y, playerAnimation.getScaleX() * dir, playerAnimation.getScaleY());
+        batch.draw(currentFrame, dir < 0 ? x + width : x, y, playerAnimation.getScaleX() * dir, playerAnimation.getScaleY());
     }
 
     public void setMoveLeft(boolean moveLeft) {

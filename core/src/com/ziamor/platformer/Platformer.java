@@ -16,6 +16,7 @@ import com.ziamor.platformer.Entities.Player.PlayerInputProcessor;
 public class Platformer extends ApplicationAdapter {
     public static float unitScale = 1 / 128f;
     float width, height;
+    int[] backgroundLayers = {0};
 
     OrthographicCamera camera;
     OrthogonalTiledMapRenderer tiledMapRenderer;
@@ -27,11 +28,12 @@ public class Platformer extends ApplicationAdapter {
     Batch batch;
     Texture playerSpriteSheet;
 
+    CollisionHelper collisionHelper;
+
     @Override
     public void create() {
         this.width = Gdx.graphics.getWidth();
         this.height = Gdx.graphics.getHeight();
-
         tiledMap = new TmxMapLoader().load("level1.tmx");
         tiledMapRenderer = new OrthogonalTiledMapRenderer(tiledMap, 1 / 128f);
         batch = tiledMapRenderer.getBatch();
@@ -44,6 +46,8 @@ public class Platformer extends ApplicationAdapter {
         playerEntity = new PlayerEntity(playerSpriteSheet, new Vector2(6, 5));
         inputProcessor = new PlayerInputProcessor(playerEntity);
         Gdx.input.setInputProcessor(inputProcessor);
+
+        collisionHelper = new CollisionHelper(tiledMap);
     }
 
     @Override
@@ -52,7 +56,7 @@ public class Platformer extends ApplicationAdapter {
         //Update game objects
 
         //Update playerEntity
-        playerEntity.update(deltatime);
+        playerEntity.update(collisionHelper, deltatime);
 
         //Graphics stuff
         Gdx.gl.glClearColor(0.2f, 0.4f, 0.6f, 1);
@@ -60,7 +64,7 @@ public class Platformer extends ApplicationAdapter {
         camera.update();
 
         tiledMapRenderer.setView(camera);
-        tiledMapRenderer.render();
+        tiledMapRenderer.render(backgroundLayers);
 
         batch.begin();
         playerEntity.render(deltatime, batch);

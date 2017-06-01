@@ -39,6 +39,7 @@ public enum PlayerState implements State<PlayerEntity> {
             }
         }
     },
+
     CROUCHING() {
         @Override
         public void enter(PlayerEntity playerEntity) {
@@ -52,6 +53,7 @@ public enum PlayerState implements State<PlayerEntity> {
             }
         }
     },
+
     JUMP() {
         @Override
         public void enter(PlayerEntity playerEntity) {
