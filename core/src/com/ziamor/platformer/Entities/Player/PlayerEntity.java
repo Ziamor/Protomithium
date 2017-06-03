@@ -19,8 +19,10 @@ import com.ziamor.platformer.Platformer;
  * Created by ziamor on 5/29/2017.
  */
 public class PlayerEntity {
-    final float maxX = 20f;
-    final float player_width = 128, player_height = 256;
+    final float maxX = Platformer.unitScale * 20f;
+    final float player_width = Platformer.unitScale * 128, player_height = Platformer.unitScale * 256;
+    float jumpForce = Platformer.unitScale * 20f;
+    float gravity = Platformer.unitScale * -18f;
     PlayerAnimation playerAnimation;
     Vector2 pos, vel;
     StateMachine<PlayerEntity, PlayerState> playerStateMachine;
@@ -53,7 +55,7 @@ public class PlayerEntity {
 
         // Handle movement along the y-axis
         if (pos.y > 0)
-            vel.y -= 18f * deltatime;
+            vel.y += gravity * deltatime;
         else if (pos.y < 0) {
             vel.y = 0;
             pos.y = 0;
@@ -62,16 +64,17 @@ public class PlayerEntity {
         // Check to see if we need to jump
         if (jump) {
             jump = false;
-            vel.y += 1000 * deltatime;
+            vel.y += jumpForce;
         }
 
         // Check for collisions
-        Gdx.app.log("", "" + pos.x + "\t" + vel.x + "\t" + (pos.x + vel.x));
+        //Gdx.app.log("", "" + pos.x + "\t" + vel.x + "\t" + (pos.x + vel.x));
+        Gdx.app.log("", "" + pos.x);
         collRegion.x = Math.min(pos.x, pos.x + vel.x);
         collRegion.y = Math.max(pos.y, pos.y + vel.y);
         collRegion.width = Math.abs(vel.x) + player_width;
         collRegion.height = Math.abs(vel.y) + player_height;
-        //Array<Rectangle> possibleCollisions = collisionHelper.getPossibleCollisions(null, "collisions");
+        Array<Rectangle> possibleCollisions = collisionHelper.getPossibleCollisions(collRegion, "collision");
 
         //Update the new position
         pos.x += vel.x;
@@ -98,14 +101,10 @@ public class PlayerEntity {
         currentFrame = playerAnimation.getCurrentFrame(deltatime);
         float width = currentFrame.getRegionWidth() * Platformer.unitScale;
         float dir = getDirFaceing();
-
-        // Convert the position vector to the right scale
-        float x = Platformer.unitScale * pos.x;
-        float y = Platformer.unitScale * pos.y;
-
+        
         // If the player is facing to the left, scale the animation frame to be negative to flip it.
         // Also the position of the frame needs to be shifted to the right by the width of the frame
-        batch.draw(currentFrame, dir < 0 ? x + width : x, y, playerAnimation.getScaleX() * dir, playerAnimation.getScaleY());
+        batch.draw(currentFrame, dir < 0 ? pos.x + width : pos.x, pos.y, playerAnimation.getScaleX() * dir, playerAnimation.getScaleY());
     }
 
     public void debugRender(float deltatime, ShapeRenderer shapeRenderer) {

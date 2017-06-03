@@ -20,8 +20,12 @@ public class CollisionHelper {
     public Array<Rectangle> getPossibleCollisions(Rectangle region, String layer_name) {
         TiledMapTileLayer layer = (TiledMapTileLayer) tiledMap.getLayers().get(layer_name);
         possibleCollisions.clear();
-        for (int y = (int) region.y; y <= (int) region.y + region.height; y++) {
-            for (int x = (int) region.x; x <= (int) region.x + region.width; x++) {
+        int startX = (int) region.x;
+        int startY = (int) region.y;
+        int endX = startX + (int) (Math.ceil(region.width));
+        int endY = startY + (int) (Math.ceil(region.height));
+        for (int y = startY; y <= endY; y++) {
+            for (int x = startX; x <= endX; x++) {
                 TiledMapTileLayer.Cell cell = layer.getCell(x, y);
                 if (cell != null) {
                     Rectangle rect = new Rectangle(x, y, 1, 1);
