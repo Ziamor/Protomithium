@@ -16,7 +16,7 @@ import com.ziamor.platformer.Entities.Player.PlayerInputProcessor;
 
 public class Platformer extends ApplicationAdapter {
     public static float unitScale = 1 / 128f;
-    private final boolean debug = false;
+    private final boolean debug = true;
     float width, height;
     int[] backgroundLayers = {0};
 

@@ -1,14 +1,11 @@
 package com.ziamor.platformer.Entities.Player;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ai.fsm.DefaultStateMachine;
 import com.badlogic.gdx.ai.fsm.StateMachine;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.maps.tiled.TiledMap;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
@@ -19,15 +16,15 @@ import com.ziamor.platformer.Platformer;
  * Created by ziamor on 5/29/2017.
  */
 public class PlayerEntity {
-    final float maxX = Platformer.unitScale * 20f;
-    final float player_width = Platformer.unitScale * 128, player_height = Platformer.unitScale * 256;
+    final float maxX = Platformer.unitScale * 20f, colBumpOut = Platformer.unitScale * 1f;
+    final float player_width = Platformer.unitScale * 128, player_height = Platformer.unitScale * 180;
     float jumpForce = Platformer.unitScale * 20f;
     float gravity = Platformer.unitScale * -18f;
     PlayerAnimation playerAnimation;
     Vector2 pos, vel;
     StateMachine<PlayerEntity, PlayerState> playerStateMachine;
     Rectangle AABB, collRegion;
-
+    Array<Rectangle> possibleCollisions;
     private boolean moveLeft, moveRight, jump, crouch;
     private float lastDirFacing;
     private TextureRegion currentFrame;
@@ -53,12 +50,15 @@ public class PlayerEntity {
         } else
             vel.x = vel.x * (1 - deltatime * 8);
 
+        if (vel.x < 0.001 && vel.x > -0.001)
+            vel.x = 0;
+
         // Handle movement along the y-axis
-        if (pos.y > 0)
+        if (pos.y > 5)
             vel.y += gravity * deltatime;
-        else if (pos.y < 0) {
+        else if (pos.y < 5) {
             vel.y = 0;
-            pos.y = 0;
+            pos.y = 5;
         }
 
         // Check to see if we need to jump
@@ -69,13 +69,34 @@ public class PlayerEntity {
 
         // Check for collisions
         //Gdx.app.log("", "" + pos.x + "\t" + vel.x + "\t" + (pos.x + vel.x));
-        Gdx.app.log("", "" + pos.x);
-        collRegion.x = Math.min(pos.x, pos.x + vel.x);
+        float newX = pos.x + vel.x;
+        collRegion.x = Math.min(pos.x, newX);
         collRegion.y = Math.max(pos.y, pos.y + vel.y);
         collRegion.width = Math.abs(vel.x) + player_width;
         collRegion.height = Math.abs(vel.y) + player_height;
-        Array<Rectangle> possibleCollisions = collisionHelper.getPossibleCollisions(collRegion, "collision");
+        possibleCollisions = collisionHelper.getPossibleCollisions(collRegion, "collision");
 
+        if (possibleCollisions != null) {
+            for (Rectangle rect : possibleCollisions) {
+                if (AABB.overlaps(rect)) {
+                    if (vel.x > 0 && pos.x < rect.x) {
+                        if (newX + player_width > rect.x) {
+                            //Push the player out of the collision
+                            vel.x = -colBumpOut;
+                            break;
+                        }
+                    } else if (vel.x < 0 && pos.x > rect.x) {
+                        if (newX < rect.x + rect.width) {
+                            //Push the player out of the collision
+                            vel.x = colBumpOut;
+                            break;
+                        }
+                    } else {
+                        //TODO add case for when vel.x == 0
+                    }
+                }
+            }
+        }
         //Update the new position
         pos.x += vel.x;
         pos.y += vel.y;
@@ -84,7 +105,7 @@ public class PlayerEntity {
     }
 
     public void tryToJump() {
-        if (pos.y == 0)
+        if (pos.y == 5)
             jump = true;
     }
 
@@ -101,7 +122,7 @@ public class PlayerEntity {
         currentFrame = playerAnimation.getCurrentFrame(deltatime);
         float width = currentFrame.getRegionWidth() * Platformer.unitScale;
         float dir = getDirFaceing();
-        
+
         // If the player is facing to the left, scale the animation frame to be negative to flip it.
         // Also the position of the frame needs to be shifted to the right by the width of the frame
         batch.draw(currentFrame, dir < 0 ? pos.x + width : pos.x, pos.y, playerAnimation.getScaleX() * dir, playerAnimation.getScaleY());
@@ -110,18 +131,22 @@ public class PlayerEntity {
     public void debugRender(float deltatime, ShapeRenderer shapeRenderer) {
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
         shapeRenderer.setColor(0, 0, 0, 1);
-        shapeRenderer.rect(Platformer.unitScale * AABB.x, Platformer.unitScale * AABB.y, Platformer.unitScale * AABB.width, Platformer.unitScale * AABB.height);
+        shapeRenderer.rect(AABB.x, AABB.y, AABB.width, AABB.height);
         shapeRenderer.end();
 
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
         shapeRenderer.setColor(1, 1, 0, 1);
-        shapeRenderer.rect(Platformer.unitScale * collRegion.x, Platformer.unitScale * collRegion.y, Platformer.unitScale * collRegion.width, Platformer.unitScale * collRegion.height);
+        shapeRenderer.rect(collRegion.x, collRegion.y, collRegion.width, collRegion.height);
         shapeRenderer.end();
 
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(1, 0, 0, 1);
-        shapeRenderer.rect((int) (Platformer.unitScale * collRegion.x), (int) (Platformer.unitScale * collRegion.y), (int) (Math.ceil(Platformer.unitScale * collRegion.width)), (int) (Math.ceil(Platformer.unitScale * collRegion.height)));
-        shapeRenderer.end();
+        if (possibleCollisions != null) {
+            for (Rectangle rect : possibleCollisions) {
+                shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+                shapeRenderer.setColor(1, 0, 0, 1);
+                shapeRenderer.rect(rect.x, rect.y, rect.width, rect.height);
+                shapeRenderer.end();
+            }
+        }
     }
 
     public void setMoveLeft(boolean moveLeft) {
