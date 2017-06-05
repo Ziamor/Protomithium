@@ -1,5 +1,6 @@
 package com.ziamor.platformer.Entities.Player;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ai.fsm.DefaultStateMachine;
 import com.badlogic.gdx.ai.fsm.StateMachine;
 import com.badlogic.gdx.graphics.Texture;
@@ -18,23 +19,23 @@ import com.ziamor.platformer.Platformer;
 public class PlayerEntity {
     final float maxX = Platformer.unitScale * 20f, colBumpOut = Platformer.unitScale * 2f;
     final float player_width = Platformer.unitScale * 100, player_height = Platformer.unitScale * 160;
-    final float groundColliderWidth = Platformer.unitScale * 50f;
+    final float groundColliderWidth = player_width, groundColliderHeight = Platformer.unitScale * 2f;
     float jumpForce = Platformer.unitScale * 20f;
     float gravity = Platformer.unitScale * -18f;
     PlayerAnimation playerAnimation;
     Vector2 pos, vel;
     StateMachine<PlayerEntity, PlayerState> playerStateMachine;
     Rectangle playerCollider, groundCollider, collRegion;
-    Array<Rectangle> possibleCollisions,possibleGroundCollisions;
+    Array<Rectangle> possibleCollisions, possibleGroundCollisions;
     private boolean moveLeft, moveRight, jump, crouch, touchingGround;
     private float lastDirFacing;
     private TextureRegion currentFrame;
 
     public PlayerEntity(Texture spriteSheet, Vector2 start_pos) {
         this.pos = start_pos;
-        this.vel = Vector2.Zero;
+        this.vel = new Vector2();
         this.playerCollider = new Rectangle(pos.x, pos.y, player_width, player_height);
-        this.groundCollider = new Rectangle(pos.x + player_width / 2 - groundColliderWidth / 2, pos.y - groundColliderWidth / 2, groundColliderWidth, groundColliderWidth);
+        this.groundCollider = new Rectangle(pos.x, pos.y - groundColliderHeight / 2, groundColliderWidth, groundColliderHeight);
         this.playerAnimation = new PlayerAnimation(spriteSheet);
         this.playerStateMachine = new DefaultStateMachine<PlayerEntity, PlayerState>(this, PlayerState.IDLE, PlayerState.GLOBAL_STATE);
         this.lastDirFacing = 1;
@@ -67,65 +68,7 @@ public class PlayerEntity {
         //Gdx.app.log("", "" + pos.x + "\t" + vel.x + "\t" + (pos.x + vel.x));
         //Gdx.app.log("", "" + pos.y + "\t" + vel.y + "\t" + (pos.y + vel.y));
         // Check for collisions
-        float newX = pos.x + vel.x;
-        float newY = pos.y + vel.y;
-        collRegion.x = Math.min(pos.x, newX);
-        collRegion.y = Math.max(pos.y, newY);
-        collRegion.width = Math.abs(vel.x) + player_width;
-        collRegion.height = Math.abs(vel.y) + player_height;
-        possibleCollisions = collisionHelper.getRegionPossibleCollisions(collRegion, "collision");
-
-        if (possibleCollisions != null) {
-            //Handle x-axis collisons first
-            for (Rectangle rect : possibleCollisions) {
-                if (playerCollider.overlaps(rect)) {
-                    if (vel.x > 0 && pos.x <= rect.x) {
-                        if (newX + player_width > rect.x) {
-                            //Push the player out of the collision
-                            vel.x = -colBumpOut;
-                            break;
-                        }
-                    } else if (vel.x < 0 && pos.x >= rect.x) {
-                        if (newX < rect.x + rect.width) {
-                            //Push the player out of the collision
-                            vel.x = colBumpOut;
-                            break;
-                        }
-                    } else {
-                        //TODO add case for when vel.x == 0
-                    }
-                }
-            }
-
-            //Handle y-axis
-            for (Rectangle rect : possibleCollisions) {
-                if (playerCollider.overlaps(rect)) {
-                    if (vel.y > 0 && pos.y < rect.y) {
-                        if (newY + player_height >= rect.y) {
-                            vel.y = 0;
-                            pos.y = rect.y - player_height;
-                            break;
-                        }
-                    } else if (vel.y < 0 && pos.y >= rect.y) {
-                        if (newY < rect.y + rect.height) {
-                            vel.y = 0;
-                            pos.y = rect.y + rect.height;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            possibleGroundCollisions = collisionHelper.getPossibleGroundCollisions(groundCollider, "collision");
-
-            touchingGround = false;
-            for (Rectangle rect : possibleCollisions) {
-                if (groundCollider.overlaps(rect)) {
-                    touchingGround = true;
-                    break;
-                }
-            }
-        }
+        handleCollisions(collisionHelper);
         if (vel.x < 0.001 && vel.x > -0.001)
             vel.x = 0;
 
@@ -137,7 +80,49 @@ public class PlayerEntity {
         pos.y += vel.y;
 
         playerCollider.set(pos.x, pos.y, player_width, player_height);
-        groundCollider.set(pos.x + player_width / 2 - groundColliderWidth / 2, pos.y - groundColliderWidth / 2, groundColliderWidth, groundColliderWidth);
+        groundCollider.set(pos.x, pos.y - groundColliderHeight / 2, groundColliderWidth, groundColliderHeight);
+    }
+
+    public void handleCollisions(CollisionHelper collisionHelper) {
+        float newX = pos.x + vel.x;
+        float newY = pos.y + vel.y;
+
+        playerCollider.setX(newX);
+        playerCollider.setY(newY);
+
+        possibleCollisions = collisionHelper.getPossibleCollisions(playerCollider, "collision");
+
+        for (Rectangle rect : possibleCollisions) {
+            if (playerCollider.overlaps(rect)) {
+                Vector2 shallowVector = collisionHelper.getShallowAxisVector(playerCollider, rect);
+                Gdx.app.log("", shallowVector.toString() + "\t\t\t\t\t" + vel.toString());
+                if (shallowVector.x != 0) {
+                    vel.x = 0;
+                    if (pos.x < rect.x)
+                        pos.x = rect.x - player_width;
+                    else
+                        pos.x = rect.x + rect.width;
+                    playerCollider.setX(pos.x);
+                } else if (shallowVector.y != 0) {
+                    vel.y = 0;
+                    if (pos.y < rect.y)
+                        pos.y = rect.y - player_height;
+                    else
+                        pos.y = rect.y + rect.height;
+                    playerCollider.setY(pos.y);
+                }
+            }
+        }
+
+        possibleGroundCollisions = collisionHelper.getPossibleGroundCollisions(groundCollider, "collision");
+
+        touchingGround = false;
+        for (Rectangle rect : possibleGroundCollisions) {
+            if (groundCollider.overlaps(rect)) {
+                touchingGround = true;
+                break;
+            }
+        }
     }
 
     public void tryToJump() {
@@ -180,8 +165,8 @@ public class PlayerEntity {
         shapeRenderer.rect(collRegion.x, collRegion.y, collRegion.width, collRegion.height);
         shapeRenderer.end();
 
-        if (possibleGroundCollisions != null) {
-            for (Rectangle rect : possibleGroundCollisions) {
+        if (possibleCollisions != null) {
+            for (Rectangle rect : possibleCollisions) {
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
                 shapeRenderer.setColor(1, 0, 0, 1);
                 shapeRenderer.rect(rect.x, rect.y, rect.width, rect.height);
