@@ -10,8 +10,11 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.Array;
 import com.ziamor.platformer.Entities.EnemyEntity;
+import com.ziamor.platformer.Entities.GameEntity;
 import com.ziamor.platformer.Entities.Player.PlayerEntity;
 import com.ziamor.platformer.Entities.Player.PlayerInputProcessor;
 
@@ -36,10 +39,15 @@ public class Platformer extends ApplicationAdapter {
 
     CollisionHelper collisionHelper;
 
+    Array<GameEntity> entities;
+    Array<Collidable> collidables;
+    Array<Rectangle> possibleCollisions;
+
     @Override
     public void create() {
         this.width = Gdx.graphics.getWidth();
         this.height = Gdx.graphics.getHeight();
+        this.possibleCollisions = new Array<Rectangle>();
         tiledMap = new TmxMapLoader().load("level1.tmx");
         tiledMapRenderer = new OrthogonalTiledMapRenderer(tiledMap, 1 / 128f);
         batch = tiledMapRenderer.getBatch();
@@ -57,6 +65,11 @@ public class Platformer extends ApplicationAdapter {
         Gdx.input.setInputProcessor(inputProcessor);
 
         collisionHelper = new CollisionHelper(tiledMap);
+
+        entities = new Array<GameEntity>();
+        collidables = new Array<Collidable>();
+        addEntity(playerEntity);
+        addEntity(enemyEntity);
     }
 
     @Override
@@ -68,6 +81,20 @@ public class Platformer extends ApplicationAdapter {
         playerEntity.update(collisionHelper, deltatime);
 
         enemyEntity.update(collisionHelper, deltatime);
+
+        for (Collidable ent : collidables) {
+            Rectangle[] colliders = ent.getColliders();
+            if (colliders != null)
+                for (Rectangle collider : colliders) {
+                    if (ent.collidesWithWalls(collider)) {
+                        collisionHelper.getPossibleCollisions(collider, possibleCollisions, "walls");
+                        for (Rectangle wall : possibleCollisions) {
+                            if (collider.overlaps(wall))
+                                ent.onWallCollision(wall, collider);
+                        }
+                    }
+                }
+        }
 
         //Graphics stuff
         Gdx.gl.glClearColor(0.2f, 0.4f, 0.6f, 1);
@@ -86,6 +113,16 @@ public class Platformer extends ApplicationAdapter {
             shapeRenderer.setProjectionMatrix(batch.getProjectionMatrix());
             playerEntity.debugRender(deltatime, shapeRenderer);
         }
+    }
+
+    protected void addEntity(GameEntity ent) {
+        if (ent == null) {
+            Gdx.app.debug("Error", "Tried to add a null entity");
+            return;
+        }
+        entities.add(ent);
+        if (ent instanceof Collidable)
+            collidables.add((Collidable) ent);
     }
 
     @Override

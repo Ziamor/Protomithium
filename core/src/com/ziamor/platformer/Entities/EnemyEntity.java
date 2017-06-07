@@ -15,8 +15,8 @@ import com.ziamor.platformer.Platformer;
 /**
  * Created by ziamor on 6/5/2017.
  */
-public class EnemyEntity {
-    Vector2 pos, vel, target;
+public class EnemyEntity extends GameEntity {
+    Vector2 target;
     float enemyWidth = 1, enemyHeight = 1, maxX = 0.1f;
     Rectangle enemyCollider;
     StateMachine<EnemyEntity, EnemyState> stateMachine;
@@ -26,8 +26,7 @@ public class EnemyEntity {
     private boolean dirFaceing = true; // false for left, true for right
 
     public EnemyEntity(Texture spriteSheet, Vector2 start_pos) {
-        this.pos = start_pos;
-        this.vel = new Vector2();
+        super(start_pos);
         this.target = new Vector2();
         this.enemyCollider = new Rectangle(pos.x, pos.y, enemyWidth, enemyHeight);
         this.stateMachine = new DefaultStateMachine<EnemyEntity, EnemyState>(this, EnemyState.IDLE);
@@ -71,7 +70,6 @@ public class EnemyEntity {
         for (Rectangle rect : possibleCollisions) {
             if (enemyCollider.overlaps(rect)) {
                 Vector2 shallowVector = collisionHelper.getShallowAxisVector(enemyCollider, rect);
-                Gdx.app.log("", shallowVector.toString() + "\t\t\t\t\t" + vel.toString());
                 if (shallowVector.x != 0) {
                     vel.x = 0;
                     dirFaceing = !dirFaceing;

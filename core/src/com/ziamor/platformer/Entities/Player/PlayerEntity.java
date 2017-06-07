@@ -10,32 +10,34 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
+import com.ziamor.platformer.Collidable;
 import com.ziamor.platformer.CollisionHelper;
+import com.ziamor.platformer.Entities.GameEntity;
 import com.ziamor.platformer.Platformer;
 
 /**
  * Created by ziamor on 5/29/2017.
  */
-public class PlayerEntity {
+public class PlayerEntity extends GameEntity implements Collidable {
     final float maxX = Platformer.unitScale * 20f, colBumpOut = Platformer.unitScale * 2f;
     final float player_width = Platformer.unitScale * 100, player_height = Platformer.unitScale * 160;
     final float groundColliderWidth = player_width, groundColliderHeight = Platformer.unitScale * 2f;
     float jumpForce = Platformer.unitScale * 20f;
     float gravity = Platformer.unitScale * -18f;
     PlayerAnimation playerAnimation;
-    Vector2 pos, vel;
     StateMachine<PlayerEntity, PlayerState> playerStateMachine;
     Rectangle playerCollider, groundCollider, collRegion;
+    Rectangle[] colliders;
     Array<Rectangle> possibleCollisions, possibleGroundCollisions;
     private boolean moveLeft, moveRight, jump, crouch, touchingGround;
     private float lastDirFacing;
     private TextureRegion currentFrame;
 
     public PlayerEntity(Texture spriteSheet, Vector2 start_pos) {
-        this.pos = start_pos;
-        this.vel = new Vector2();
+        super(start_pos);
         this.playerCollider = new Rectangle(pos.x, pos.y, player_width, player_height);
         this.groundCollider = new Rectangle(pos.x, pos.y - groundColliderHeight / 2, groundColliderWidth, groundColliderHeight);
+        this.colliders = new Rectangle[]{playerCollider, groundCollider};
         this.playerAnimation = new PlayerAnimation(spriteSheet);
         this.playerStateMachine = new DefaultStateMachine<PlayerEntity, PlayerState>(this, PlayerState.IDLE, PlayerState.GLOBAL_STATE);
         this.lastDirFacing = 1;
@@ -97,7 +99,6 @@ public class PlayerEntity {
         for (Rectangle rect : possibleCollisions) {
             if (playerCollider.overlaps(rect)) {
                 Vector2 shallowVector = collisionHelper.getShallowAxisVector(playerCollider, rect);
-                Gdx.app.log("", shallowVector.toString() + "\t\t\t\t\t" + vel.toString());
                 if (shallowVector.x != 0) {
                     vel.x = 0;
                     if (pos.x < rect.x)
@@ -226,5 +227,31 @@ public class PlayerEntity {
 
     public boolean isCrouching() {
         return crouch;
+    }
+
+    @Override
+    public void onEntityCollision(GameEntity obj, Rectangle collider) {
+        Gdx.app.log("Collision", "Hit an entity");
+    }
+
+    @Override
+    public void onWallCollision(Rectangle wall, Rectangle collider) {
+        if(collider != groundCollider)
+        Gdx.app.log("Collision", "Hit a wall");
+    }
+
+    @Override
+    public boolean collidesWithWalls(Rectangle collider) {
+        return true;
+    }
+
+    @Override
+    public boolean collidesWithEntities(Rectangle collider) {
+        return true;
+    }
+
+    @Override
+    public Rectangle[] getColliders() {
+        return colliders;
     }
 }
