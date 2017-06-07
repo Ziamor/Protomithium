@@ -41,6 +41,8 @@ public class PlayerEntity {
         this.lastDirFacing = 1;
         this.collRegion = new Rectangle();
         this.touchingGround = true;
+        this.possibleCollisions = new Array<Rectangle>();
+        this.possibleGroundCollisions = new Array<Rectangle>();
     }
 
     public void update(CollisionHelper collisionHelper, float deltatime) {
@@ -90,7 +92,7 @@ public class PlayerEntity {
         playerCollider.setX(newX);
         playerCollider.setY(newY);
 
-        possibleCollisions = collisionHelper.getPossibleCollisions(playerCollider, "collision");
+        collisionHelper.getPossibleCollisions(playerCollider, possibleCollisions, "collision");
 
         for (Rectangle rect : possibleCollisions) {
             if (playerCollider.overlaps(rect)) {
@@ -114,7 +116,7 @@ public class PlayerEntity {
             }
         }
 
-        possibleGroundCollisions = collisionHelper.getPossibleGroundCollisions(groundCollider, "collision");
+        collisionHelper.getPossibleGroundCollisions(groundCollider, possibleGroundCollisions, "collision");
 
         touchingGround = false;
         for (Rectangle rect : possibleGroundCollisions) {

@@ -11,6 +11,7 @@ import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.Vector2;
+import com.ziamor.platformer.Entities.EnemyEntity;
 import com.ziamor.platformer.Entities.Player.PlayerEntity;
 import com.ziamor.platformer.Entities.Player.PlayerInputProcessor;
 
@@ -27,9 +28,11 @@ public class Platformer extends ApplicationAdapter {
     PlayerEntity playerEntity;
     PlayerInputProcessor inputProcessor;
 
+    EnemyEntity enemyEntity;
+
     Batch batch;
     ShapeRenderer shapeRenderer;
-    Texture playerSpriteSheet;
+    Texture playerSpriteSheet, enemySpriteSheet;
 
     CollisionHelper collisionHelper;
 
@@ -46,8 +49,10 @@ public class Platformer extends ApplicationAdapter {
         camera.update();
 
         playerSpriteSheet = new Texture("spritesheet_players.png");
+        enemySpriteSheet = new Texture("spritesheet_enemies.png");
 
         playerEntity = new PlayerEntity(playerSpriteSheet, new Vector2(6, 5));
+        enemyEntity = new EnemyEntity(enemySpriteSheet, new Vector2(20, 5));
         inputProcessor = new PlayerInputProcessor(playerEntity);
         Gdx.input.setInputProcessor(inputProcessor);
 
@@ -62,6 +67,8 @@ public class Platformer extends ApplicationAdapter {
         //Update playerEntity
         playerEntity.update(collisionHelper, deltatime);
 
+        enemyEntity.update(collisionHelper, deltatime);
+
         //Graphics stuff
         Gdx.gl.glClearColor(0.2f, 0.4f, 0.6f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -72,6 +79,7 @@ public class Platformer extends ApplicationAdapter {
 
         batch.begin();
         playerEntity.render(deltatime, batch);
+        enemyEntity.render(deltatime, batch);
         batch.end();
 
         if (debug) {
@@ -83,6 +91,7 @@ public class Platformer extends ApplicationAdapter {
     @Override
     public void dispose() {
         playerSpriteSheet.dispose();
+        enemySpriteSheet.dispose();
         tiledMapRenderer.dispose();
     }
 }

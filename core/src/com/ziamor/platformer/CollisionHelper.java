@@ -12,11 +12,9 @@ import com.badlogic.gdx.utils.Array;
  */
 public class CollisionHelper {
     TiledMap tiledMap;
-    Array<Rectangle> possibleCollisions;
 
     public CollisionHelper(TiledMap tiledMap) {
         this.tiledMap = tiledMap;
-        this.possibleCollisions = new Array<Rectangle>();
     }
 
     public Vector2 getShallowAxisVector(Rectangle collider, Rectangle blocker) {
@@ -32,7 +30,7 @@ public class CollisionHelper {
         return vec;
     }
 
-    public Array<Rectangle> getPossibleCollisions(Rectangle collider, String layer_name) {
+    public Array<Rectangle> getPossibleCollisions(Rectangle collider, Array<Rectangle> possibleCollisions,String layer_name) {
         TiledMapTileLayer layer = (TiledMapTileLayer) tiledMap.getLayers().get(layer_name);
         possibleCollisions.clear();
         int startX = (int) Math.max(0, collider.x - 1);
@@ -51,7 +49,7 @@ public class CollisionHelper {
         return possibleCollisions;
     }
 
-    public Array<Rectangle> getPossibleGroundCollisions(Rectangle collider, String layer_name) {
+    public Array<Rectangle> getPossibleGroundCollisions(Rectangle collider, Array<Rectangle> possibleCollisions, String layer_name) {
         TiledMapTileLayer layer = (TiledMapTileLayer) tiledMap.getLayers().get(layer_name);
         possibleCollisions.clear();
         int startX = (int) Math.max(0, collider.x - 1);
