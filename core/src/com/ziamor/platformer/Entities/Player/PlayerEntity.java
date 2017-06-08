@@ -28,7 +28,6 @@ public class PlayerEntity extends GameEntity implements Collidable {
     StateMachine<PlayerEntity, PlayerState> playerStateMachine;
     Rectangle playerCollider, groundCollider, collRegion;
     Rectangle[] colliders;
-    Array<Rectangle> possibleCollisions, possibleGroundCollisions;
     private boolean moveLeft, moveRight, jump, crouch, touchingGround;
     private float lastDirFacing;
     private TextureRegion currentFrame;
@@ -43,11 +42,10 @@ public class PlayerEntity extends GameEntity implements Collidable {
         this.lastDirFacing = 1;
         this.collRegion = new Rectangle();
         this.touchingGround = true;
-        this.possibleCollisions = new Array<Rectangle>();
-        this.possibleGroundCollisions = new Array<Rectangle>();
     }
 
-    public void update(CollisionHelper collisionHelper, float deltatime) {
+    @Override
+    public void update(float deltatime) {
         playerStateMachine.update();
 
         // Handle movement allong the x-axis
@@ -69,64 +67,13 @@ public class PlayerEntity extends GameEntity implements Collidable {
             vel.y += jumpForce;
         }
 
-        //Gdx.app.log("", "" + pos.x + "\t" + vel.x + "\t" + (pos.x + vel.x));
-        //Gdx.app.log("", "" + pos.y + "\t" + vel.y + "\t" + (pos.y + vel.y));
-        // Check for collisions
-        handleCollisions(collisionHelper);
-        if (vel.x < 0.001 && vel.x > -0.001)
-            vel.x = 0;
-
-        if (vel.y < 0.001 && vel.y > -0.001)
-            vel.y = 0;
-
         //Update the new position
         pos.x += vel.x;
         pos.y += vel.y;
 
-        playerCollider.set(pos.x, pos.y, player_width, player_height);
-        groundCollider.set(pos.x, pos.y - groundColliderHeight / 2, groundColliderWidth, groundColliderHeight);
+        updateColliders();
     }
 
-    public void handleCollisions(CollisionHelper collisionHelper) {
-        float newX = pos.x + vel.x;
-        float newY = pos.y + vel.y;
-
-        playerCollider.setX(newX);
-        playerCollider.setY(newY);
-
-        collisionHelper.getPossibleCollisions(playerCollider, possibleCollisions, "collision");
-
-        for (Rectangle rect : possibleCollisions) {
-            if (playerCollider.overlaps(rect)) {
-                Vector2 shallowVector = collisionHelper.getShallowAxisVector(playerCollider, rect);
-                if (shallowVector.x != 0) {
-                    vel.x = 0;
-                    if (pos.x < rect.x)
-                        pos.x = rect.x - player_width;
-                    else
-                        pos.x = rect.x + rect.width;
-                    playerCollider.setX(pos.x);
-                } else if (shallowVector.y != 0) {
-                    vel.y = 0;
-                    if (pos.y < rect.y)
-                        pos.y = rect.y - player_height;
-                    else
-                        pos.y = rect.y + rect.height;
-                    playerCollider.setY(pos.y);
-                }
-            }
-        }
-
-        collisionHelper.getPossibleGroundCollisions(groundCollider, possibleGroundCollisions, "collision");
-
-        touchingGround = false;
-        for (Rectangle rect : possibleGroundCollisions) {
-            if (groundCollider.overlaps(rect)) {
-                touchingGround = true;
-                break;
-            }
-        }
-    }
 
     public void tryToJump() {
         if (isOnGround())
@@ -142,6 +89,7 @@ public class PlayerEntity extends GameEntity implements Collidable {
         crouch = false;
     }
 
+    @Override
     public void render(float deltatime, Batch batch) {
         currentFrame = playerAnimation.getCurrentFrame(deltatime);
         float width = currentFrame.getRegionWidth() * Platformer.unitScale;
@@ -153,7 +101,7 @@ public class PlayerEntity extends GameEntity implements Collidable {
     }
 
     public void debugRender(float deltatime, ShapeRenderer shapeRenderer) {
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        /*-shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
         shapeRenderer.setColor(0, 0, 0, 1);
         shapeRenderer.rect(playerCollider.x, playerCollider.y, playerCollider.width, playerCollider.height);
         shapeRenderer.end();
@@ -175,7 +123,12 @@ public class PlayerEntity extends GameEntity implements Collidable {
                 shapeRenderer.rect(rect.x, rect.y, rect.width, rect.height);
                 shapeRenderer.end();
             }
-        }
+        }*/
+    }
+
+    public void updateColliders(){
+        playerCollider.set(pos.x, pos.y, player_width, player_height);
+        groundCollider.set(pos.x, pos.y - groundColliderHeight / 2, groundColliderWidth, groundColliderHeight);
     }
 
     public void setMoveLeft(boolean moveLeft) {
@@ -230,14 +183,22 @@ public class PlayerEntity extends GameEntity implements Collidable {
     }
 
     @Override
-    public void onEntityCollision(GameEntity obj, Rectangle collider) {
-        Gdx.app.log("Collision", "Hit an entity");
+    public void onEntityCollision(GameEntity obj, Rectangle collider, CollisionHelper collisionHelper) {
     }
 
     @Override
-    public void onWallCollision(Rectangle wall, Rectangle collider) {
-        if(collider != groundCollider)
-        Gdx.app.log("Collision", "Hit a wall");
+    public void onWallCollision(Rectangle wall, Rectangle collider, CollisionHelper collisionHelper) {
+        if (collider == playerCollider) {
+            this.pushOutOfCollision(collider, wall, collisionHelper);
+            updateColliders();
+        } else if (collider == groundCollider) {
+            touchingGround = true;
+        }
+    }
+
+    @Override
+    public void onCollisionCheckBegin() {
+        touchingGround = false;
     }
 
     @Override
