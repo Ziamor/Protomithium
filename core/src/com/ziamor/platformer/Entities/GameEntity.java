@@ -15,6 +15,14 @@ public abstract class GameEntity {
     private boolean dispose;
     //protected float width,height;
 
+    public Vector2 getPos() {
+        return pos;
+    }
+
+    public Vector2 getVel() {
+        return vel;
+    }
+
     public GameEntity(Vector2 start_pos) {
         this.pos = start_pos;
         this.vel = new Vector2();

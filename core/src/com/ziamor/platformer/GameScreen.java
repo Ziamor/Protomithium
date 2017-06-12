@@ -12,8 +12,10 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
@@ -31,7 +33,8 @@ public class GameScreen implements Screen {
 
     private final boolean debug = true;
 
-    float width, height;
+    float screenPxWidth, screenPxHeight, screenWidth = 25, screenHeight = 15;
+    int mapWidth = 75, mapHeight = 15;
     int[] backgroundLayers = {0};
 
     Stage stage;
@@ -66,19 +69,19 @@ public class GameScreen implements Screen {
 
     public GameScreen(Platformer game) {
         this.game = game;
-        this.width = Gdx.graphics.getWidth();
-        this.height = Gdx.graphics.getHeight();
+        this.screenPxWidth = Gdx.graphics.getWidth();
+        this.screenPxHeight = Gdx.graphics.getHeight();
         this.possibleCollisions = new Array<Rectangle>();
         this.skin = game.skin;
 
         inputMultiplexer = new InputMultiplexer();
 
         tiledMap = new TmxMapLoader().load("level1.tmx");
-        tiledMapRenderer = new OrthogonalTiledMapRenderer(tiledMap, 1 / 128f);
+        tiledMapRenderer = new OrthogonalTiledMapRenderer(tiledMap, unitScale);
         batch = tiledMapRenderer.getBatch();
         shapeRenderer = new ShapeRenderer();
         camera = new OrthographicCamera();
-        camera.setToOrtho(false, 25, 15);
+        camera.setToOrtho(false, screenWidth, screenHeight);
         camera.update();
 
         stage = new Stage();
@@ -177,7 +180,7 @@ public class GameScreen implements Screen {
         Gdx.gl.glClearColor(0.2f, 0.4f, 0.6f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        camera.update();
+        updateCamera();
 
         // Render the background
         tiledMapRenderer.setView(camera);
@@ -220,6 +223,14 @@ public class GameScreen implements Screen {
         }
         entities.removeValue(ent, true);
         collidables.removeValue((com.ziamor.platformer.engine.Collidable) ent, true);
+    }
+
+    protected void updateCamera() {
+        Vector3 pos = camera.position;
+        pos.x = MathUtils.clamp(playerEntity.getPos().x, screenWidth / 2, mapWidth - screenWidth / 2);
+        pos.y =  MathUtils.clamp(playerEntity.getPos().y, screenHeight / 2, mapHeight - screenHeight / 2);
+        camera.update();
+        Gdx.app.log("", playerEntity.getPos().x + "\t" + pos.x);
     }
 
     @Override
