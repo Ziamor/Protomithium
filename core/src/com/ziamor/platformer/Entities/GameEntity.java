@@ -1,9 +1,10 @@
 package com.ziamor.platformer.Entities;
 
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
-import com.ziamor.platformer.CollisionHelper;
+import com.ziamor.platformer.engine.CollisionHelper;
 
 
 /**
@@ -11,7 +12,7 @@ import com.ziamor.platformer.CollisionHelper;
  */
 public abstract class GameEntity {
     protected Vector2 pos, vel;
-    protected boolean dispose;
+    private boolean dispose;
     //protected float width,height;
 
     public GameEntity(Vector2 start_pos) {
@@ -21,7 +22,15 @@ public abstract class GameEntity {
     }
 
     public abstract void update(float deltatime);
+
     public abstract void render(float deltatime, Batch batch);
+
+    public void debugRender(float deltatime, ShapeRenderer shapeRenderer) {
+    }
+
+    public void dispose(){
+        this.dispose = true;
+    }
 
     //TODO find a better place for this
     protected void pushOutOfCollision(Rectangle collider, Rectangle blocker, CollisionHelper collisionHelper) {

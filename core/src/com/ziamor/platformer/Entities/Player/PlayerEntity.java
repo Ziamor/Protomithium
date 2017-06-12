@@ -1,6 +1,5 @@
 package com.ziamor.platformer.Entities.Player;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ai.fsm.DefaultStateMachine;
 import com.badlogic.gdx.ai.fsm.StateMachine;
 import com.badlogic.gdx.graphics.Texture;
@@ -9,28 +8,28 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.utils.Array;
-import com.ziamor.platformer.Collidable;
-import com.ziamor.platformer.CollisionHelper;
+import com.ziamor.platformer.GameScreen;
+import com.ziamor.platformer.engine.Collidable;
+import com.ziamor.platformer.engine.CollisionHelper;
 import com.ziamor.platformer.Entities.GameEntity;
-import com.ziamor.platformer.Platformer;
 
 /**
  * Created by ziamor on 5/29/2017.
  */
 public class PlayerEntity extends GameEntity implements Collidable {
-    final float maxX = Platformer.unitScale * 20f, colBumpOut = Platformer.unitScale * 2f;
-    final float player_width = Platformer.unitScale * 100, player_height = Platformer.unitScale * 160;
-    final float groundColliderWidth = player_width, groundColliderHeight = Platformer.unitScale * 2f;
-    float jumpForce = Platformer.unitScale * 20f;
-    float gravity = Platformer.unitScale * -18f;
+    final float maxX = GameScreen.unitScale * 20f, colBumpOut = GameScreen.unitScale * 2f;
+    final float player_width = GameScreen.unitScale * 100, player_height = GameScreen.unitScale * 160;
+    final float groundColliderWidth = player_width, groundColliderHeight = GameScreen.unitScale * 2f;
+    float jumpForce = GameScreen.unitScale * 20f;
+    float gravity = GameScreen.unitScale * -18f;
     PlayerAnimation playerAnimation;
     StateMachine<PlayerEntity, PlayerState> playerStateMachine;
-    Rectangle playerCollider, groundCollider, collRegion;
-    Rectangle[] colliders;
+    private Rectangle playerCollider, groundCollider, collRegion;
+    private Rectangle[] colliders;
     private boolean moveLeft, moveRight, jump, crouch, touchingGround;
     private float lastDirFacing;
     private TextureRegion currentFrame;
+    private int score;
 
     public PlayerEntity(Texture spriteSheet, Vector2 start_pos) {
         super(start_pos);
@@ -74,25 +73,10 @@ public class PlayerEntity extends GameEntity implements Collidable {
         updateColliders();
     }
 
-
-    public void tryToJump() {
-        if (isOnGround())
-            jump = true;
-    }
-
-    public void crouch() {
-        if (isOnGround())
-            crouch = true;
-    }
-
-    public void stopCrouch() {
-        crouch = false;
-    }
-
     @Override
     public void render(float deltatime, Batch batch) {
         currentFrame = playerAnimation.getCurrentFrame(deltatime);
-        float width = currentFrame.getRegionWidth() * Platformer.unitScale;
+        float width = currentFrame.getRegionWidth() * GameScreen.unitScale;
         float dir = getDirFaceing();
 
         // If the player is facing to the left, scale the animation frame to be negative to flip it.
@@ -100,6 +84,7 @@ public class PlayerEntity extends GameEntity implements Collidable {
         batch.draw(currentFrame, dir < 0 ? pos.x + width : pos.x, pos.y, playerAnimation.getScaleX() * dir, playerAnimation.getScaleY());
     }
 
+    @Override
     public void debugRender(float deltatime, ShapeRenderer shapeRenderer) {
         /*-shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
         shapeRenderer.setColor(0, 0, 0, 1);
@@ -126,7 +111,15 @@ public class PlayerEntity extends GameEntity implements Collidable {
         }*/
     }
 
-    public void updateColliders(){
+    public void addScore(int value) {
+        score += value;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void updateColliders() {
         playerCollider.set(pos.x, pos.y, player_width, player_height);
         groundCollider.set(pos.x, pos.y - groundColliderHeight / 2, groundColliderWidth, groundColliderHeight);
     }
@@ -144,6 +137,20 @@ public class PlayerEntity extends GameEntity implements Collidable {
             return lastDirFacing = moveLeft ? -1 : 1;
         else
             return lastDirFacing;
+    }
+
+    public void tryToJump() {
+        if (isOnGround())
+            jump = true;
+    }
+
+    public void crouch() {
+        if (isOnGround())
+            crouch = true;
+    }
+
+    public void stopCrouch() {
+        crouch = false;
     }
 
     public boolean wantsToJump() {
@@ -208,7 +215,9 @@ public class PlayerEntity extends GameEntity implements Collidable {
 
     @Override
     public boolean collidesWithEntities(Rectangle collider) {
-        return true;
+        if (collider == playerCollider)
+            return true;
+        return false;
     }
 
     @Override

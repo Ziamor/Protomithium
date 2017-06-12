@@ -1,25 +1,28 @@
-package com.ziamor.platformer.Entities;
+package com.ziamor.platformer.Entities.Enemies;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ai.fsm.DefaultStateMachine;
 import com.badlogic.gdx.ai.fsm.StateMachine;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
-import com.ziamor.platformer.Collidable;
-import com.ziamor.platformer.CollisionHelper;
+import com.ziamor.platformer.Entities.*;
+import com.ziamor.platformer.Entities.Player.PlayerState;
+import com.ziamor.platformer.engine.Collidable;
+import com.ziamor.platformer.engine.CollisionHelper;
 import com.ziamor.platformer.Entities.Player.PlayerEntity;
-import com.ziamor.platformer.Platformer;
+import com.ziamor.platformer.GameScreen;
 
 /**
  * Created by ziamor on 6/5/2017.
  */
 public class EnemyEntity extends GameEntity implements Collidable {
+    final int enemyValue = 500;
     Vector2 target;
-    float enemyWidth = 1, enemyHeight = 1, maxX = 0.1f;
+    float enemyWidth = 1, enemyHeight = 0.5f, maxX = 0.1f;
     Rectangle enemyCollider;
     Rectangle[] colliders;
     StateMachine<EnemyEntity, EnemyState> stateMachine;
@@ -54,7 +57,7 @@ public class EnemyEntity extends GameEntity implements Collidable {
     @Override
     public void render(float deltatime, Batch batch) {
         currentFrame = enemyAnimation.getCurrentFrame(deltatime);
-        float width = currentFrame.getRegionWidth() * Platformer.unitScale;
+        float width = currentFrame.getRegionWidth() * GameScreen.unitScale;
         float dir = -getDirFaceing();
 
         // If the player is facing to the left, scale the animation frame to be negative to flip it.
@@ -73,6 +76,14 @@ public class EnemyEntity extends GameEntity implements Collidable {
             return 1;
     }
 
+    @Override
+    public void debugRender(float deltatime, ShapeRenderer shapeRenderer) {
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(0, 0, 0, 1);
+        shapeRenderer.rect(enemyCollider.x, enemyCollider.y, enemyCollider.width, enemyCollider.height);
+        shapeRenderer.end();
+    }
+
     public boolean isMoving() {
         return true;
     }
@@ -81,8 +92,11 @@ public class EnemyEntity extends GameEntity implements Collidable {
     public void onEntityCollision(GameEntity obj, Rectangle collider, CollisionHelper collisionHelper) {
         if (obj instanceof PlayerEntity) {
             Vector2 penetrationVec = collisionHelper.getPenetrationVector(collider, enemyCollider);
-            if (penetrationVec.y <= penetrationVec.x && ((PlayerEntity) obj).isFalling())
-                this.dispose = true;
+            PlayerEntity player = (PlayerEntity) obj;
+            if (penetrationVec.y <= penetrationVec.x && player.isFalling()) {
+                player.addScore(enemyValue);
+                this.dispose();
+            }
         }
     }
 

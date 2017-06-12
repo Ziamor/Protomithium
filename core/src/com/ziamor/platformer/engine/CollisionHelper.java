@@ -1,4 +1,4 @@
-package com.ziamor.platformer;
+package com.ziamor.platformer.engine;
 
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;

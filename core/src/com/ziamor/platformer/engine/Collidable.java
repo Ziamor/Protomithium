@@ -1,7 +1,6 @@
-package com.ziamor.platformer;
+package com.ziamor.platformer.engine;
 
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.utils.Array;
 import com.ziamor.platformer.Entities.GameEntity;
 
 /**

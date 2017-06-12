@@ -1,4 +1,4 @@
-package com.ziamor.platformer.Entities;
+package com.ziamor.platformer.Entities.Enemies;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
@@ -9,7 +9,6 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
  * Created by ziamor on 6/7/2017.
  */
 public class EnemyAnimation {
-    final int frameCols = 8, frameRows = 16;
     float stateTime, scaleX = 1, scaleY = 1;
     Animation<TextureRegion> walkAnimation, idleAnimation, jumpAnimation, fallAnimation;
     Texture spriteSheet;

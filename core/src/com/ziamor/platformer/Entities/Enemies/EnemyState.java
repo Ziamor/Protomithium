@@ -1,4 +1,4 @@
-package com.ziamor.platformer.Entities;
+package com.ziamor.platformer.Entities.Enemies;
 
 import com.badlogic.gdx.ai.fsm.State;
 import com.badlogic.gdx.ai.msg.Telegram;
