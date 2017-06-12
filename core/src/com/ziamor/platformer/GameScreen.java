@@ -27,6 +27,7 @@ import com.ziamor.platformer.Entities.Items.Coin;
 import com.ziamor.platformer.Entities.Player.PlayerEntity;
 import com.ziamor.platformer.Entities.Player.PlayerInputProcessor;
 import com.ziamor.platformer.engine.CollisionHelper;
+import com.ziamor.platformer.engine.TargetOrthographicCamera;
 
 public class GameScreen implements Screen {
     public static float unitScale = 1 / 128f;
@@ -46,7 +47,7 @@ public class GameScreen implements Screen {
 
     InputMultiplexer inputMultiplexer;
 
-    OrthographicCamera camera;
+    TargetOrthographicCamera camera;
     OrthogonalTiledMapRenderer tiledMapRenderer;
     TiledMap tiledMap;
 
@@ -80,7 +81,7 @@ public class GameScreen implements Screen {
         tiledMapRenderer = new OrthogonalTiledMapRenderer(tiledMap, unitScale);
         batch = tiledMapRenderer.getBatch();
         shapeRenderer = new ShapeRenderer();
-        camera = new OrthographicCamera();
+        camera = new TargetOrthographicCamera(mapWidth, mapHeight);
         camera.setToOrtho(false, screenWidth, screenHeight);
         camera.update();
 
@@ -117,6 +118,8 @@ public class GameScreen implements Screen {
         addEntity(playerEntity);
         addEntity(enemyEntity);
         addEntity(new Coin(itemTextures, new Vector2(3, 5)));
+
+        camera.setTarget(playerEntity);
     }
 
     @Override
@@ -180,7 +183,8 @@ public class GameScreen implements Screen {
         Gdx.gl.glClearColor(0.2f, 0.4f, 0.6f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        updateCamera();
+        camera.UpdatePosition(delta);
+        camera.update();
 
         // Render the background
         tiledMapRenderer.setView(camera);
@@ -223,14 +227,6 @@ public class GameScreen implements Screen {
         }
         entities.removeValue(ent, true);
         collidables.removeValue((com.ziamor.platformer.engine.Collidable) ent, true);
-    }
-
-    protected void updateCamera() {
-        Vector3 pos = camera.position;
-        pos.x = MathUtils.clamp(playerEntity.getPos().x, screenWidth / 2, mapWidth - screenWidth / 2);
-        pos.y =  MathUtils.clamp(playerEntity.getPos().y, screenHeight / 2, mapHeight - screenHeight / 2);
-        camera.update();
-        Gdx.app.log("", playerEntity.getPos().x + "\t" + pos.x);
     }
 
     @Override
