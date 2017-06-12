@@ -1,5 +1,6 @@
 package com.ziamor.platformer.Entities.Player;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ai.fsm.DefaultStateMachine;
 import com.badlogic.gdx.ai.fsm.StateMachine;
 import com.badlogic.gdx.graphics.Texture;
@@ -8,27 +9,34 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.ziamor.platformer.Entities.Damageable;
 import com.ziamor.platformer.GameScreen;
 import com.ziamor.platformer.engine.Collidable;
 import com.ziamor.platformer.engine.CollisionHelper;
 import com.ziamor.platformer.Entities.GameEntity;
 
-/**
- * Created by ziamor on 5/29/2017.
- */
-public class PlayerEntity extends GameEntity implements Collidable {
+public class PlayerEntity extends GameEntity implements Collidable, Damageable {
     final float maxX = GameScreen.unitScale * 20f, colBumpOut = GameScreen.unitScale * 2f;
     final float player_width = GameScreen.unitScale * 100, player_height = GameScreen.unitScale * 160;
     final float groundColliderWidth = player_width, groundColliderHeight = GameScreen.unitScale * 2f;
-    float jumpForce = GameScreen.unitScale * 20f;
-    float gravity = GameScreen.unitScale * -18f;
+
+    private float jumpForce = GameScreen.unitScale * 20f;
+    private float gravity = GameScreen.unitScale * -18f;
+
+    private float currentHealth, maxHealth = 100, timeSinceLastDamage, damageImmunityTime = 1.5f;
+    private boolean dead, damageImmune;
+
     PlayerAnimation playerAnimation;
     StateMachine<PlayerEntity, PlayerState> playerStateMachine;
+
     private Rectangle playerCollider, groundCollider, collRegion;
     private Rectangle[] colliders;
+
     private boolean moveLeft, moveRight, jump, crouch, touchingGround;
     private float lastDirFacing;
+
     private TextureRegion currentFrame;
+
     private int score;
 
     public PlayerEntity(Texture spriteSheet, Vector2 start_pos) {
@@ -41,11 +49,20 @@ public class PlayerEntity extends GameEntity implements Collidable {
         this.lastDirFacing = 1;
         this.collRegion = new Rectangle();
         this.touchingGround = true;
+        this.currentHealth = maxHealth;
     }
 
     @Override
     public void update(float deltatime) {
         playerStateMachine.update();
+
+        if (damageImmune) {
+            timeSinceLastDamage += deltatime;
+            if (timeSinceLastDamage >= damageImmunityTime) {
+                damageImmune = false;
+                timeSinceLastDamage = 0;
+            }
+        }
 
         // Handle movement allong the x-axis
         if (isMoving() && !isCrouching()) {
@@ -153,11 +170,8 @@ public class PlayerEntity extends GameEntity implements Collidable {
         crouch = false;
     }
 
-    public boolean wantsToJump() {
-        return jump;
-    }
-
     public boolean isJumping() {
+
         return vel.y > 0;
     }
 
@@ -171,18 +185,6 @@ public class PlayerEntity extends GameEntity implements Collidable {
 
     public boolean isMoving() {
         return moveLeft || moveRight;
-    }
-
-    public boolean isMoveLeft() {
-        return moveLeft;
-    }
-
-    public boolean isMoveRight() {
-        return moveRight;
-    }
-
-    public boolean isInAir() {
-        return pos.y > 0;
     }
 
     public boolean isCrouching() {
@@ -223,5 +225,49 @@ public class PlayerEntity extends GameEntity implements Collidable {
     @Override
     public Rectangle[] getColliders() {
         return colliders;
+    }
+
+    @Override
+    public float getCurrentHealth() {
+        return currentHealth;
+    }
+
+    @Override
+    public float getMaxHealth() {
+        return maxHealth;
+    }
+
+    @Override
+    public boolean isDead() {
+        return dead;
+    }
+
+    @Override
+    public void applyDamage(float dmg_value) {
+        // The player can't be hurt is they are immune to damage
+        if (damageImmune)
+            return;
+        // If dmg_value is less then zero it would heal instead of damage
+        if (dmg_value < 0)
+            return;
+        currentHealth -= dmg_value;
+        if (currentHealth < 0) {
+            currentHealth = 0;
+            dead = true;
+        }
+
+        damageImmune = true;
+    }
+
+    @Override
+    public void applyHeal(float heal_value) {
+        //If heal_value < 0 it would damage instead of heal
+        if (heal_value < 0)
+            return;
+
+        currentHealth += heal_value;
+
+        if (currentHealth > maxHealth)
+            currentHealth = maxHealth;
     }
 }

@@ -10,7 +10,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
  */
 public class EnemyAnimation {
     float stateTime, scaleX = 1, scaleY = 1;
-    Animation<TextureRegion> walkAnimation, idleAnimation, jumpAnimation, fallAnimation;
+    Animation<TextureRegion> walkAnimation, idleAnimation, jumpAnimation, fallAnimation, deadAnimation;
     Texture spriteSheet;
     TextureRegion currentFrame;
     Animation<TextureRegion> currentAnimation;
@@ -25,6 +25,7 @@ public class EnemyAnimation {
         idleAnimation = new Animation<TextureRegion>(0.2f, allFrames[4][1]);
         jumpAnimation = new Animation<TextureRegion>(0.2f, allFrames[1][1]);
         fallAnimation = new Animation<TextureRegion>(0.2f, allFrames[2][1]);
+        deadAnimation = new Animation<TextureRegion>(0.2f, allFrames[3][1]);
 
         stateTime = 0;
         currentAnimation = idleAnimation;
@@ -47,6 +48,8 @@ public class EnemyAnimation {
             currentAnimation = jumpAnimation;
         } else if (state.equals("fall")) {
             currentAnimation = fallAnimation;
+        } else if (state.equals("dead")) {
+            currentAnimation = deadAnimation;
         } else
             Gdx.app.debug("Invalid Animation name", state);
     }

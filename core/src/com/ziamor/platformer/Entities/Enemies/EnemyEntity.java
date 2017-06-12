@@ -19,23 +19,25 @@ import com.ziamor.platformer.GameScreen;
 /**
  * Created by ziamor on 6/5/2017.
  */
-public class EnemyEntity extends GameEntity implements Collidable {
+public class EnemyEntity extends GameEntity implements Collidable, Damageable {
+    private boolean dirFaceing = true; // false for left, true for right
     final int enemyValue = 500;
+    float enemyWidth = 1, enemyHeight = 0.5f, maxX = 0.1f, deathTime, maxDeathTime = 3f;
+    float currentHealth, maxHealth = 1;
+    boolean dead;
     Vector2 target;
-    float enemyWidth = 1, enemyHeight = 0.5f, maxX = 0.1f;
     Rectangle enemyCollider;
     Rectangle[] colliders;
     StateMachine<EnemyEntity, EnemyState> stateMachine;
     EnemyAnimation enemyAnimation;
     TextureRegion currentFrame;
     Array<Rectangle> possibleCollisions;
-    private boolean dirFaceing = true; // false for left, true for right
 
     public EnemyEntity(Texture spriteSheet, Vector2 start_pos) {
         super(start_pos);
         this.target = new Vector2();
         this.enemyCollider = new Rectangle(pos.x, pos.y, enemyWidth, enemyHeight);
-        this.stateMachine = new DefaultStateMachine<EnemyEntity, EnemyState>(this, EnemyState.IDLE);
+        this.stateMachine = new DefaultStateMachine<EnemyEntity, EnemyState>(this, EnemyState.IDLE, EnemyState.GLOBAL_STATE);
         this.enemyAnimation = new EnemyAnimation(spriteSheet);
         this.possibleCollisions = new Array<Rectangle>();
         this.colliders = new Rectangle[]{enemyCollider};
@@ -45,7 +47,12 @@ public class EnemyEntity extends GameEntity implements Collidable {
     public void update(float deltatime) {
         stateMachine.update();
 
-        vel.x = vel.x * (1 - deltatime * 4) + target.x * (deltatime * 4);
+        if (dead) {
+            deathTime += deltatime;
+            if (deathTime >= maxDeathTime)
+                this.dispose();
+        } else
+            vel.x = vel.x * (1 - deltatime * 4) + target.x * (deltatime * 4);
 
         //Update the new position
         pos.x += vel.x;
@@ -77,6 +84,32 @@ public class EnemyEntity extends GameEntity implements Collidable {
     }
 
     @Override
+    public float getCurrentHealth() {
+        return currentHealth;
+    }
+
+    @Override
+    public float getMaxHealth() {
+        return maxHealth;
+    }
+
+    public boolean isDead() {
+        return dead;
+    }
+
+    @Override
+    public void applyDamage(float dmg_value) {
+        // Anything kills this enemy in one hit
+        if (dmg_value > 0)
+            this.dead = true;
+    }
+
+    @Override
+    public void applyHeal(float heal_value) {
+        // This enemy can't be healed
+    }
+
+    @Override
     public void debugRender(float deltatime, ShapeRenderer shapeRenderer) {
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
         shapeRenderer.setColor(0, 0, 0, 1);
@@ -90,13 +123,18 @@ public class EnemyEntity extends GameEntity implements Collidable {
 
     @Override
     public void onEntityCollision(GameEntity obj, Rectangle collider, CollisionHelper collisionHelper) {
+        if(isDead())
+            return;
+
         if (obj instanceof PlayerEntity) {
             Vector2 penetrationVec = collisionHelper.getPenetrationVector(collider, enemyCollider);
             PlayerEntity player = (PlayerEntity) obj;
             if (penetrationVec.y <= penetrationVec.x && player.isFalling()) {
                 player.addScore(enemyValue);
-                this.dispose();
-            }
+                this.dead = true;
+                this.vel.x = 0;
+            } else
+                player.applyDamage(25f);
         }
     }
 

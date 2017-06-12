@@ -4,9 +4,6 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.MathUtils;
 import com.ziamor.platformer.Entities.GameEntity;
 
-/**
- * Created by ziamor on 6/12/2017.
- */
 public class TargetOrthographicCamera extends OrthographicCamera {
     private float mapWidth, mapHeight, lerp = 5f;
     private GameEntity target;

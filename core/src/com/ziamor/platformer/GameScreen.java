@@ -3,6 +3,7 @@ package com.ziamor.platformer;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -18,6 +19,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.ProgressBar;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.Array;
@@ -32,7 +34,7 @@ import com.ziamor.platformer.engine.TargetOrthographicCamera;
 public class GameScreen implements Screen {
     public static float unitScale = 1 / 128f;
 
-    private final boolean debug = true;
+    private final boolean debug = false;
 
     float screenPxWidth, screenPxHeight, screenWidth = 25, screenHeight = 15;
     int mapWidth = 75, mapHeight = 15;
@@ -42,6 +44,7 @@ public class GameScreen implements Screen {
     Table table;
     Skin skin;
     Label lblScore;
+    ProgressBar healthBar;
 
     Platformer game;
 
@@ -94,6 +97,11 @@ public class GameScreen implements Screen {
         table.left();
         stage.addActor(table);
 
+        table.add(new Label("Health:", skin));
+        healthBar = new ProgressBar(0, 100, 1, false, skin);
+
+        table.add(healthBar);
+        table.row();
         table.add(new Label("Score:", skin));
         lblScore = new Label("0", skin);
         table.add(lblScore);
@@ -120,6 +128,9 @@ public class GameScreen implements Screen {
         addEntity(new Coin(itemTextures, new Vector2(3, 5)));
 
         camera.setTarget(playerEntity);
+        healthBar.setRange(0, playerEntity.getMaxHealth());
+        healthBar.setValue(playerEntity.getCurrentHealth());
+        healthBar.setAnimateDuration(1);
     }
 
     @Override
@@ -197,6 +208,8 @@ public class GameScreen implements Screen {
         batch.end();
 
         lblScore.setText(playerEntity.getScore() + "");
+        healthBar.setValue(playerEntity.getCurrentHealth());
+
         stage.act(delta);
         stage.draw();
 

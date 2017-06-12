@@ -30,6 +30,17 @@ public enum EnemyState implements State<EnemyEntity> {
         public void update(EnemyEntity enemyEntity) {
             enemyEntity.target.x = enemyEntity.maxX * enemyEntity.getDirFaceing();
         }
+    }, DEAD() {
+        @Override
+        public void enter(EnemyEntity enemyEntity) {
+            enemyEntity.enemyAnimation.setCurrentAnimation("dead");
+        }
+    }, GLOBAL_STATE() {
+        @Override
+        public void update(EnemyEntity enemyEntity) {
+            if(enemyEntity.isDead())
+                enemyEntity.stateMachine.changeState(DEAD);
+        }
     };
 
     @Override
