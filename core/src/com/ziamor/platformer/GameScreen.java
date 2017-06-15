@@ -30,15 +30,17 @@ import com.ziamor.platformer.Entities.Items.Coin;
 import com.ziamor.platformer.Entities.Player.PlayerEntity;
 import com.ziamor.platformer.Entities.Player.PlayerInputProcessor;
 import com.ziamor.platformer.engine.CollisionHelper;
+import com.ziamor.platformer.engine.GameLevel;
 import com.ziamor.platformer.engine.TargetOrthographicCamera;
+import com.ziamor.platformer.engine.WaypointGraph;
 
 public class GameScreen implements Screen {
     public static float unitScale = 1 / 128f;
 
-    private final boolean debug = false;
+    private final boolean debug = true;
 
     float screenPxWidth, screenPxHeight, screenWidth = 25, screenHeight = 15;
-    int mapWidth = 75, mapHeight = 15;
+    int mapWidth = 75, mapHeight = 15;//TODO get map size from file
     int[] backgroundLayers = {0};
 
     Stage stage;
@@ -71,6 +73,8 @@ public class GameScreen implements Screen {
     Array<com.ziamor.platformer.engine.Collidable> collidables;
     Array<Rectangle> possibleCollisions;
 
+    WaypointGraph graph;
+    GameLevel level;
 
     public GameScreen(Platformer game) {
         this.game = game;
@@ -126,12 +130,15 @@ public class GameScreen implements Screen {
         collidables = new Array<com.ziamor.platformer.engine.Collidable>();
         addEntity(playerEntity);
         addEntity(enemyEntity);
-        addEntity(new Coin(itemTextures, new Vector2(3, 5)));
+        addEntity(new Coin(itemTextures, new Vector2(68, 5)));
 
         camera.setTarget(playerEntity);
         healthBar.setRange(0, playerEntity.getMaxHealth());
         healthBar.setValue(playerEntity.getCurrentHealth());
         healthBar.setAnimateDuration(1);
+
+        level = new GameLevel(mapWidth, mapHeight, tiledMap);
+        graph = new WaypointGraph(level);
     }
 
     @Override
@@ -222,6 +229,7 @@ public class GameScreen implements Screen {
             shapeRenderer.setProjectionMatrix(batch.getProjectionMatrix());
             for (GameEntity ent : entities)
                 ent.debugRender(delta, shapeRenderer);
+            graph.debugRender(delta, shapeRenderer);
         }
     }
 
