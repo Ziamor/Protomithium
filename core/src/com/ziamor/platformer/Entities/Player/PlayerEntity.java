@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.ziamor.platformer.Entities.Damageable;
@@ -196,9 +197,14 @@ public class PlayerEntity extends GameEntity implements Collidable, Damageable {
     }
 
     @Override
-    public void onWallCollision(Rectangle wall, Rectangle collider, CollisionHelper collisionHelper) {
+    public void onWallCollision(Rectangle wall, Rectangle collider, TiledMapTileLayer.Cell cell, CollisionHelper collisionHelper) {
+        Object isSloped = cell.getTile().getProperties().get("isSloped");
         if (collider == playerCollider) {
-            this.pushOutOfCollision(collider, wall, collisionHelper);
+            if (isSloped != null && (Boolean) isSloped) {
+                this.pos.y = wall.y + this.pos.x + playerCollider.width - wall.x;
+            } else {
+                this.pushOutOfCollision(collider, wall, collisionHelper);
+            }
             updateColliders();
         } else if (collider == groundCollider) {
             touchingGround = true;

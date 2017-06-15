@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.ziamor.platformer.Entities.GameEntity;
@@ -52,7 +53,7 @@ public class Coin extends GameEntity implements Collidable {
     }
 
     @Override
-    public void onWallCollision(Rectangle wall, Rectangle collider, CollisionHelper collisionHelper) {
+    public void onWallCollision(Rectangle wall, Rectangle collider, TiledMapTileLayer.Cell cell, CollisionHelper collisionHelper) {
 
     }
 

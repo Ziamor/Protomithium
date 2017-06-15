@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.tiled.TiledMap;
+import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.MathUtils;
@@ -161,7 +162,8 @@ public class GameScreen implements Screen {
                         for (Rectangle wall : possibleCollisions) {
                             // If the collider is overlapping, notify the object
                             if (collider.overlaps(wall)) {
-                                ent.onWallCollision(wall, collider, collisionHelper);
+                                TiledMapTileLayer.Cell cell = ((TiledMapTileLayer) (tiledMap.getLayers().get("walls"))).getCell((int) wall.x, (int) wall.y);// TODO get better way for cell
+                                ent.onWallCollision(wall, collider, cell, collisionHelper);
                             }
                         }
                     }
