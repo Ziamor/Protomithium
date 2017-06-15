@@ -1,69 +1,84 @@
 package com.ziamor.platformer.engine;
 
+import com.badlogic.gdx.ai.pfa.Connection;
+import com.badlogic.gdx.ai.pfa.indexed.IndexedGraph;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.utils.Array;
 
-public class WaypointGraph {
+public class WaypointGraph implements IndexedGraph<WaypointNode> {
 
     private GameLevel level;
-    private WaypointNode[][] matrix;
     private boolean[][] blockers;
+    private WaypointNode[][] nodeMatrix;
+    private Array<WaypointNode> nodes;
 
     public WaypointGraph(GameLevel level) {
         this.level = level;
+        createGraph();
+    }
 
-        matrix = new WaypointNode[level.getWidth()][level.getHeight()];
-
+    public void createGraph() {
         blockers = level.getBlockingMatrix();
+        nodeMatrix = new WaypointNode[blockers.length][blockers[0].length];
+        nodes = new Array<WaypointNode>();
 
-        for (int y = 0; y < matrix[0].length; y++) {
+        // Construct the nodes and add platform connections
+        for (int y = 0; y < blockers[0].length; y++) {
             boolean buildingPlatform = false;
-            for (int x = 0; x < matrix.length; x++) {
+            for (int x = 0; x < blockers.length; x++) {
                 if (!blockers[x][y]) {
+                    WaypointNode newNode = null;
                     if (buildingPlatform) {
                         if (isPlatform(x, y))
                             if (isPlatform(x + 1, y))
-                                matrix[x][y] = new WaypointNode(WaypointNode.WaypointType.NORMAL);
+                                newNode = new WaypointNode(WaypointNode.WayPointType.NORMAL, x, y);
                             else
-                                matrix[x][y] = new WaypointNode(WaypointNode.WaypointType.RIGHT_EDGE);
+                                newNode = new WaypointNode(WaypointNode.WayPointType.RIGHT_EDGE, x, y);
                         else
                             buildingPlatform = false;
                     } else {
                         if (isPlatform(x, y)) {
                             if (isPlatform(x + 1, y))
-                                matrix[x][y] = new WaypointNode(WaypointNode.WaypointType.LEFT_EDGE);
+                                newNode = new WaypointNode(WaypointNode.WayPointType.LEFT_EDGE, x, y);
                             else
-                                matrix[x][y] = new WaypointNode(WaypointNode.WaypointType.SOLO_EDGE);
+                                newNode = new WaypointNode(WaypointNode.WayPointType.SOLO_EDGE, x, y);
                             buildingPlatform = true;
                         }
                     }
-                }
+                    if (newNode != null) {
+                        nodes.add(newNode);
+                        nodeMatrix[x][y] = newNode;
+                        WaypointNode prev = getNode(x - 1, y);
+                        if (prev != null) {
+                            createDoubleConnection(newNode, prev);
+                        }
+                    }
+                } else
+                    buildingPlatform = false;
+            }
+        }
+        // Generate drop connections
+        for (WaypointNode node : nodes) {
+            if (node.isLeftEdge()) {
+                WaypointNode dropNode = getFirstDropPlatform(node.getX() - 1, node.getY());
+                if (dropNode != null)
+                    node.addConnection(dropNode);
+            }
+            if (node.isRightEdge()) {
+                WaypointNode dropNode = getFirstDropPlatform(node.getX() + 1, node.getY());
+                if (dropNode != null)
+                    node.addConnection(dropNode);
             }
         }
     }
 
-    public void debugRender(float deltatime, ShapeRenderer shapeRenderer) {
-        for (int y = 0; y < matrix[0].length; y++)
-            for (int x = 0; x < matrix.length; x++) {
-                if (matrix[x][y] != null) {
-                    shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-                    switch (matrix[x][y].getType()) {
-                        case NORMAL:
-                            shapeRenderer.setColor(0f, 0, 0, 1f);
-                            break;
-                        case LEFT_EDGE:
-                            shapeRenderer.setColor(0.5f, 0, 5f, 1f);
-                            break;
-                        case RIGHT_EDGE:
-                            shapeRenderer.setColor(0.5f, 0, 0f, 1f);
-                            break;
-                        case SOLO_EDGE:
-                            shapeRenderer.setColor(0.5f, 0.25f, 0f, 1f);
-                            break;
-                    }
-                    shapeRenderer.circle(x + 0.5f, y + 0.5f, 0.15f, 6);
-                    shapeRenderer.end();
-                }
+    public void debugRender(ShapeRenderer shapeRenderer) {
+        for (WaypointNode n : nodes) {
+            n.renderNode(shapeRenderer, false);
+            for (Connection<WaypointNode> c : n.getConnections()) {
+                ((WaypointConnection) c).renderConnection(shapeRenderer, false);
             }
+        }
     }
 
     private boolean isPlatform(int x, int y) {
@@ -78,5 +93,55 @@ public class WaypointGraph {
             return true;
         // The tile below was not solid, not a platform
         return false;
+    }
+
+    public WaypointNode getNode(int x, int y) {
+        if (x < 0 || x > nodeMatrix.length)
+            return null;
+        if (y < 0 || y > nodeMatrix[x].length)
+            return null;
+        return nodeMatrix[x][y];
+    }
+
+    /**
+     * From an x and y pos find the first platform that the entity would hit if it were to drop,
+     * will return null if no platform is found or the drop point is blocked.
+     *
+     * @param x
+     * @param y
+     * @return
+     */
+    public WaypointNode getFirstDropPlatform(int x, int y) {
+        if (x < 0 || x >= nodeMatrix.length)
+            return null;
+        if (y < 0 || y >= nodeMatrix[x].length)
+            return null;
+        // Check if the start tile is blocked
+        if (blockers[x][y])
+            return null;
+        for (int i = y; i >= 0; i--)
+            if (nodeMatrix[x][i] != null)
+                return nodeMatrix[x][i];
+        return null;
+    }
+
+    public void createDoubleConnection(WaypointNode a, WaypointNode b) {
+        a.addConnection(b);
+        b.addConnection(a);
+    }
+
+    @Override
+    public int getIndex(WaypointNode node) {
+        return node.getIndex();
+    }
+
+    @Override
+    public int getNodeCount() {
+        return nodes.size;
+    }
+
+    @Override
+    public Array<Connection<WaypointNode>> getConnections(WaypointNode fromNode) {
+        return fromNode.getConnections();
     }
 }
