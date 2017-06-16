@@ -4,7 +4,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.ai.pfa.Connection;
-import com.badlogic.gdx.ai.pfa.GraphPath;
 import com.badlogic.gdx.ai.pfa.indexed.IndexedAStarPathFinder;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
@@ -30,12 +29,12 @@ import com.ziamor.platformer.Entities.Player.PlayerEntity;
 import com.ziamor.platformer.Entities.Player.PlayerInputProcessor;
 import com.ziamor.platformer.engine.CollisionHelper;
 import com.ziamor.platformer.engine.GameLevel;
+import com.ziamor.platformer.engine.Pathfinding.WayPointConnection;
+import com.ziamor.platformer.engine.Pathfinding.WayPointGraph;
+import com.ziamor.platformer.engine.Pathfinding.WayPointGraphNodePath;
+import com.ziamor.platformer.engine.Pathfinding.WayPointHeuristic;
+import com.ziamor.platformer.engine.Pathfinding.WayPointNode;
 import com.ziamor.platformer.engine.TargetOrthographicCamera;
-import com.ziamor.platformer.engine.WaypointConnection;
-import com.ziamor.platformer.engine.WaypointGraph;
-import com.ziamor.platformer.engine.WaypointGraphPath;
-import com.ziamor.platformer.engine.WaypointHeuristic;
-import com.ziamor.platformer.engine.WaypointNode;
 
 public class GameScreen implements Screen {
     public static float unitScale = 1 / 128f;
@@ -51,6 +50,7 @@ public class GameScreen implements Screen {
     Skin skin;
     Label lblScore;
     ProgressBar healthBar;
+
 
     Platformer game;
 
@@ -76,11 +76,11 @@ public class GameScreen implements Screen {
     Array<com.ziamor.platformer.engine.Collidable> collidables;
     Array<Rectangle> possibleCollisions;
 
-    WaypointGraph graph;
+    WayPointGraph graph;
     GameLevel level;
-    WaypointHeuristic heuristic;
-    IndexedAStarPathFinder<WaypointNode> pathFinder;
-    GraphPath<WaypointNode> path;
+    WayPointHeuristic heuristic;
+    IndexedAStarPathFinder<WayPointNode> pathFinder;
+    WayPointGraphNodePath path;
     boolean isPathFound;
 
     public GameScreen(Platformer game) {
@@ -145,13 +145,14 @@ public class GameScreen implements Screen {
         healthBar.setAnimateDuration(1);
 
         level = new GameLevel(mapWidth, mapHeight, tiledMap);
-        graph = new WaypointGraph(level);
-        pathFinder = new IndexedAStarPathFinder<WaypointNode>(graph);
-        heuristic = new WaypointHeuristic();
-        path = new WaypointGraphPath();
-        WaypointNode start = graph.getNode(8, 12);
-        WaypointNode end = graph.getNode(3, 5);
+        graph = new WayPointGraph(level);
+        pathFinder = new IndexedAStarPathFinder<WayPointNode>(graph);
+        heuristic = new WayPointHeuristic();
+        path = new WayPointGraphNodePath();
+        WayPointNode start = graph.getNode(8, 12);
+        WayPointNode end = graph.getNode(3, 5);
         isPathFound = pathFinder.searchNodePath(start, end, heuristic, path);
+        //isPathFound = pathFinder.searchConnectionPath(start, end, heuristic, path);
     }
 
     @Override
@@ -244,10 +245,10 @@ public class GameScreen implements Screen {
                 ent.debugRender(delta, shapeRenderer);
             graph.debugRender(shapeRenderer);
             if (isPathFound) {
-                for (WaypointNode n : path) {
+                for (WayPointNode n : path) {
                     n.renderNode(shapeRenderer, true);
-                    for (Connection<WaypointNode> c : n.getConnections())
-                        ((WaypointConnection) c).renderConnection(shapeRenderer, true);
+                    for (Connection<WayPointNode> c : n.getConnections())
+                        ((WayPointConnection) c).renderConnection(shapeRenderer, true);
 
                 }
             }
