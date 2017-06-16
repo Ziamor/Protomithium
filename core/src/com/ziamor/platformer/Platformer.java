@@ -18,7 +18,7 @@ public class Platformer extends Game {
     public void create() {
         batch = new SpriteBatch();
         font = new BitmapFont();
-        skin = new Skin(Gdx.files.internal("pixel_skin.json"));
+        skin = new Skin(Gdx.files.internal("skin.json"));
 
         this.setScreen(new MainMenuScreen(this));
     }

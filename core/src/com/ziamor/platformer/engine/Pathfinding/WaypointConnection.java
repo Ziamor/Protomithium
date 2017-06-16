@@ -1,4 +1,4 @@
-package com.ziamor.platformer.engine;
+package com.ziamor.platformer.engine.Pathfinding;
 
 import com.badlogic.gdx.ai.pfa.DefaultConnection;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;

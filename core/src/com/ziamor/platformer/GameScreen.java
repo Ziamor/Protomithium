@@ -30,12 +30,12 @@ import com.ziamor.platformer.Entities.Player.PlayerEntity;
 import com.ziamor.platformer.Entities.Player.PlayerInputProcessor;
 import com.ziamor.platformer.engine.CollisionHelper;
 import com.ziamor.platformer.engine.GameLevel;
+import com.ziamor.platformer.engine.Pathfinding.WayPointGraphNodePath;
+import com.ziamor.platformer.engine.Pathfinding.WayPointHeuristic;
+import com.ziamor.platformer.engine.Pathfinding.WaypointConnection;
+import com.ziamor.platformer.engine.Pathfinding.WaypointGraph;
+import com.ziamor.platformer.engine.Pathfinding.WaypointNode;
 import com.ziamor.platformer.engine.TargetOrthographicCamera;
-import com.ziamor.platformer.engine.WaypointConnection;
-import com.ziamor.platformer.engine.WaypointGraph;
-import com.ziamor.platformer.engine.WaypointGraphPath;
-import com.ziamor.platformer.engine.WaypointHeuristic;
-import com.ziamor.platformer.engine.WaypointNode;
 
 public class GameScreen implements Screen {
     public static float unitScale = 1 / 128f;
@@ -78,7 +78,7 @@ public class GameScreen implements Screen {
 
     WaypointGraph graph;
     GameLevel level;
-    WaypointHeuristic heuristic;
+    WayPointHeuristic heuristic;
     IndexedAStarPathFinder<WaypointNode> pathFinder;
     GraphPath<WaypointNode> path;
     boolean isPathFound;
@@ -147,8 +147,8 @@ public class GameScreen implements Screen {
         level = new GameLevel(mapWidth, mapHeight, tiledMap);
         graph = new WaypointGraph(level);
         pathFinder = new IndexedAStarPathFinder<WaypointNode>(graph);
-        heuristic = new WaypointHeuristic();
-        path = new WaypointGraphPath();
+        heuristic = new WayPointHeuristic();
+        path = new WayPointGraphNodePath();
         WaypointNode start = graph.getNode(8, 12);
         WaypointNode end = graph.getNode(3, 5);
         isPathFound = pathFinder.searchNodePath(start, end, heuristic, path);

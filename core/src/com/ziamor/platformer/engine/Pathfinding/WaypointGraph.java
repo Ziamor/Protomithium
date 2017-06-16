@@ -1,9 +1,10 @@
-package com.ziamor.platformer.engine;
+package com.ziamor.platformer.engine.Pathfinding;
 
 import com.badlogic.gdx.ai.pfa.Connection;
 import com.badlogic.gdx.ai.pfa.indexed.IndexedGraph;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.Array;
+import com.ziamor.platformer.engine.GameLevel;
 
 public class WaypointGraph implements IndexedGraph<WaypointNode> {
 
