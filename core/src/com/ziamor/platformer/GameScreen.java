@@ -4,7 +4,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.ai.pfa.Connection;
-import com.badlogic.gdx.ai.pfa.GraphPath;
 import com.badlogic.gdx.ai.pfa.indexed.IndexedAStarPathFinder;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
@@ -30,7 +29,7 @@ import com.ziamor.platformer.Entities.Player.PlayerEntity;
 import com.ziamor.platformer.Entities.Player.PlayerInputProcessor;
 import com.ziamor.platformer.engine.CollisionHelper;
 import com.ziamor.platformer.engine.GameLevel;
-import com.ziamor.platformer.engine.Pathfinding.WayPointGraphNodePath;
+import com.ziamor.platformer.engine.Pathfinding.WayPointGraphConnectionPath;
 import com.ziamor.platformer.engine.Pathfinding.WayPointHeuristic;
 import com.ziamor.platformer.engine.Pathfinding.WaypointConnection;
 import com.ziamor.platformer.engine.Pathfinding.WaypointGraph;
@@ -80,7 +79,7 @@ public class GameScreen implements Screen {
     GameLevel level;
     WayPointHeuristic heuristic;
     IndexedAStarPathFinder<WaypointNode> pathFinder;
-    GraphPath<WaypointNode> path;
+    WayPointGraphConnectionPath path;
     boolean isPathFound;
 
     public GameScreen(Platformer game) {
@@ -148,10 +147,17 @@ public class GameScreen implements Screen {
         graph = new WaypointGraph(level);
         pathFinder = new IndexedAStarPathFinder<WaypointNode>(graph);
         heuristic = new WayPointHeuristic();
-        path = new WayPointGraphNodePath();
+        path = new WayPointGraphConnectionPath();
         WaypointNode start = graph.getNode(8, 12);
         WaypointNode end = graph.getNode(3, 5);
-        isPathFound = pathFinder.searchNodePath(start, end, heuristic, path);
+        isPathFound = pathFinder.searchConnectionPath(start, end, heuristic, path);
+
+        if (isPathFound) {
+            path.reverse();
+            EnemyEntity test = new EnemyEntity(enemySpriteSheet, new Vector2(8, 12));
+            addEntity(test);
+            test.setConnectionPath(path);
+        }
     }
 
     @Override
@@ -240,17 +246,24 @@ public class GameScreen implements Screen {
             //Gdx.app.log("Number of collidable ents", collidables.size + "");
 
             shapeRenderer.setProjectionMatrix(batch.getProjectionMatrix());
-            for (GameEntity ent : entities)
-                ent.debugRender(delta, shapeRenderer);
-            graph.debugRender(shapeRenderer);
+
+            //graph.debugRender(shapeRenderer);
+
             if (isPathFound) {
-                for (WaypointNode n : path) {
+                /*for (WaypointNode n : path) {
                     n.renderNode(shapeRenderer, true);
                     for (Connection<WaypointNode> c : n.getConnections())
                         ((WaypointConnection) c).renderConnection(shapeRenderer, true);
 
+                }*/
+                for (Connection<WaypointNode> wp : path) {
+                    wp.getToNode().renderNode(shapeRenderer,false);
+                    ((WaypointConnection) wp).renderConnection(shapeRenderer, false);
                 }
             }
+
+            for (GameEntity ent : entities)
+                ent.debugRender(delta, shapeRenderer);
         }
     }
 

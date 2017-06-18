@@ -1,5 +1,6 @@
 package com.ziamor.platformer.engine;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.math.Intersector;
@@ -31,7 +32,8 @@ public class CollisionHelper {
         Rectangle intersect = new Rectangle();
         Intersector.intersectRectangles(collider, blocker, intersect);
         if (intersect != null) {
-            if (intersect.width < intersect.height || intersect.height == 0)
+            Gdx.app.log("", "" + intersect.width + "\t" + intersect.height);
+            if (intersect.width <= intersect.height || intersect.height == 0)
                 vec.x = intersect.width;
             else
                 vec.y = intersect.height;

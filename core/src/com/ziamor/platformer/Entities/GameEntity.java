@@ -1,5 +1,6 @@
 package com.ziamor.platformer.Entities;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
@@ -11,6 +12,10 @@ import com.ziamor.platformer.engine.CollisionHelper;
  * Created by ziamor on 6/7/2017.
  */
 public abstract class GameEntity {
+    public enum Direction {
+        LEFT, RIGHT
+    }
+
     protected Vector2 pos, vel;
     private boolean dispose;
     //protected float width,height;
@@ -36,7 +41,7 @@ public abstract class GameEntity {
     public void debugRender(float deltatime, ShapeRenderer shapeRenderer) {
     }
 
-    public void dispose(){
+    public void dispose() {
         this.dispose = true;
     }
 
@@ -45,6 +50,7 @@ public abstract class GameEntity {
         if (collider.overlaps(blocker)) {
             Vector2 shallowVector = collisionHelper.getShallowAxisVector(collider, blocker);
             if (shallowVector.x != 0) {
+                Gdx.app.log("X", "" + shallowVector.x);
                 vel.x = 0;
                 if (pos.x < blocker.x)
                     pos.x = blocker.x - collider.width;
@@ -52,7 +58,10 @@ public abstract class GameEntity {
                     pos.x = blocker.x + blocker.width;
                 collider.setX(pos.x);
             } else if (shallowVector.y != 0) {
-                vel.y = 0;
+                Gdx.app.log("Y", "" + shallowVector.y);
+                //TODO entity gets stuck in walls sometimes, this check stops that, find a better solution
+                if (Math.abs(shallowVector.y) > 0.01)
+                    vel.y = 0;
                 if (pos.y < blocker.y)
                     pos.y = blocker.y - collider.height;
                 else

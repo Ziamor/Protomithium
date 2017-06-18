@@ -2,6 +2,8 @@ package com.ziamor.platformer.Entities.Enemies;
 
 import com.badlogic.gdx.ai.fsm.State;
 import com.badlogic.gdx.ai.msg.Telegram;
+import com.ziamor.platformer.Entities.GameEntity;
+import com.ziamor.platformer.engine.Pathfinding.WaypointNode;
 
 /**
  * Created by ziamor on 6/6/2017.
@@ -28,7 +30,18 @@ public enum EnemyState implements State<EnemyEntity> {
 
         @Override
         public void update(EnemyEntity enemyEntity) {
-            enemyEntity.target.x = enemyEntity.maxX * enemyEntity.getDirFaceing();
+            if (enemyEntity.isFollowing()) {
+                WaypointNode targetNode = enemyEntity.getCurrentNode();
+                if (targetNode != null) {
+                    if (targetNode.getX() < enemyEntity.getPos().x)
+                        enemyEntity.setDirection(GameEntity.Direction.LEFT);
+                    else
+                        enemyEntity.setDirection(GameEntity.Direction.RIGHT);
+                }
+                enemyEntity.target.x = enemyEntity.maxX * enemyEntity.getDirectionFacingScale();
+            }
+            else
+                enemyEntity.target.x = 0;
         }
     }, DEAD() {
         @Override
@@ -38,7 +51,7 @@ public enum EnemyState implements State<EnemyEntity> {
     }, GLOBAL_STATE() {
         @Override
         public void update(EnemyEntity enemyEntity) {
-            if(enemyEntity.isDead())
+            if (enemyEntity.isDead())
                 enemyEntity.stateMachine.changeState(DEAD);
         }
     };
