@@ -1,6 +1,5 @@
 package com.ziamor.platformer.Entities.Player;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ai.fsm.DefaultStateMachine;
 import com.badlogic.gdx.ai.fsm.StateMachine;
 import com.badlogic.gdx.graphics.Texture;
@@ -11,18 +10,18 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.ziamor.platformer.Entities.Damageable;
+import com.ziamor.platformer.Entities.GameEntity;
 import com.ziamor.platformer.GameScreen;
 import com.ziamor.platformer.engine.Collidable;
 import com.ziamor.platformer.engine.CollisionHelper;
-import com.ziamor.platformer.Entities.GameEntity;
 
 public class PlayerEntity extends GameEntity implements Collidable, Damageable {
-    final float maxX = GameScreen.unitScale * 20f, colBumpOut = GameScreen.unitScale * 2f;
+    final float maxX = 0.15f;
     final float player_width = GameScreen.unitScale * 100, player_height = GameScreen.unitScale * 160;
     final float groundColliderWidth = player_width, groundColliderHeight = GameScreen.unitScale * 2f;
 
-    private float jumpForce = GameScreen.unitScale * 20f;
-    private float gravity = GameScreen.unitScale * -18f;
+    private float jumpForce = 0.25f;
+    private float gravity = -0.0098f;
 
     private float currentHealth, maxHealth = 100, timeSinceLastDamage, damageImmunityTime = 1.5f;
     private boolean dead, damageImmune;
@@ -75,13 +74,13 @@ public class PlayerEntity extends GameEntity implements Collidable, Damageable {
 
         // Handle gravity
         if (!isOnGround())
-            vel.y += gravity * deltatime;
+            vel.y += gravity;
 
         // Check to see if we need to jump
         if (jump) {
             jump = false;
             touchingGround = false;
-            vel.y += jumpForce;
+            vel.y = jumpForce;
         }
 
         //Update the new position

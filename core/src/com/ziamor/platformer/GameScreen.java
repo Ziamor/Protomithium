@@ -144,19 +144,19 @@ public class GameScreen implements Screen {
         healthBar.setAnimateDuration(1);
 
         level = new GameLevel(mapWidth, mapHeight, tiledMap);
-        graph = new WaypointGraph(level);
+        graph = new WaypointGraph(level, -0.0098f, 0.25f, 0.15f, 0.75f, 0.5f, collisionHelper);
         pathFinder = new IndexedAStarPathFinder<WaypointNode>(graph);
         heuristic = new WayPointHeuristic();
         path = new WayPointGraphConnectionPath();
         WaypointNode start = graph.getNode(8, 12);
-        WaypointNode end = graph.getNode(3, 5);
+        WaypointNode end = graph.getNode(20, 10);
         isPathFound = pathFinder.searchConnectionPath(start, end, heuristic, path);
 
         if (isPathFound) {
             path.reverse();
-            EnemyEntity test = new EnemyEntity(enemySpriteSheet, new Vector2(8, 12));
+            EnemyEntity test = new EnemyEntity(enemySpriteSheet, new Vector2(start.getX(), start.getY()));
             addEntity(test);
-            test.setConnectionPath(path);
+            test.setConnectionPath(path, end);
         }
     }
 
@@ -250,14 +250,8 @@ public class GameScreen implements Screen {
             //graph.debugRender(shapeRenderer);
 
             if (isPathFound) {
-                /*for (WaypointNode n : path) {
-                    n.renderNode(shapeRenderer, true);
-                    for (Connection<WaypointNode> c : n.getConnections())
-                        ((WaypointConnection) c).renderConnection(shapeRenderer, true);
-
-                }*/
-                for (Connection<WaypointNode> wp : path) {
-                    wp.getToNode().renderNode(shapeRenderer,false);
+                 for (Connection<WaypointNode> wp : path) {
+                    wp.getToNode().renderNode(shapeRenderer, false);
                     ((WaypointConnection) wp).renderConnection(shapeRenderer, false);
                 }
             }
