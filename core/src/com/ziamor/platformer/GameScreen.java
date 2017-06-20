@@ -37,7 +37,7 @@ import com.ziamor.platformer.engine.Pathfinding.WaypointNode;
 import com.ziamor.platformer.engine.TargetOrthographicCamera;
 
 public class GameScreen implements Screen {
-    public static float unitScale = 1 / 128f;
+    public static float unitScale = 1 / 128f, gravity = -0.98f;
 
     private final boolean debug = true;
 
@@ -122,7 +122,7 @@ public class GameScreen implements Screen {
         itemSpriteSheet = new Texture("spritesheet_items.png");
 
         playerEntity = new PlayerEntity(playerSpriteSheet, new Vector2(6, 5));
-        enemyEntity = new EnemyEntity(enemySpriteSheet, new Vector2(20, 5));
+       // enemyEntity = new EnemyEntity(enemySpriteSheet, new Vector2(20, 5));
         inputProcessor = new PlayerInputProcessor(playerEntity);
         inputMultiplexer.addProcessor(inputProcessor);
 
@@ -135,7 +135,7 @@ public class GameScreen implements Screen {
         entities = new Array<GameEntity>();
         collidables = new Array<com.ziamor.platformer.engine.Collidable>();
         addEntity(playerEntity);
-        addEntity(enemyEntity);
+        //addEntity(enemyEntity);
         addEntity(new Coin(itemTextures, new Vector2(68, 5)));
 
         camera.setTarget(playerEntity);
@@ -148,12 +148,12 @@ public class GameScreen implements Screen {
         pathFinder = new IndexedAStarPathFinder<WaypointNode>(graph);
         heuristic = new WayPointHeuristic();
         path = new WayPointGraphConnectionPath();
-        WaypointNode start = graph.getNode(8, 12);
-        WaypointNode end = graph.getNode(20, 10);
+        WaypointNode start = graph.getNode(8, 12, 0);
+        WaypointNode end = graph.getNode(20, 10, 0);
         isPathFound = pathFinder.searchConnectionPath(start, end, heuristic, path);
 
         if (isPathFound) {
-            path.reverse();
+            path.simplifyPath();
             EnemyEntity test = new EnemyEntity(enemySpriteSheet, new Vector2(start.getX(), start.getY()));
             addEntity(test);
             test.setConnectionPath(path, end);
@@ -250,7 +250,8 @@ public class GameScreen implements Screen {
             //graph.debugRender(shapeRenderer);
 
             if (isPathFound) {
-                 for (Connection<WaypointNode> wp : path) {
+                path.get(0).getFromNode().renderNode(shapeRenderer, false);
+                for (Connection<WaypointNode> wp : path) {
                     wp.getToNode().renderNode(shapeRenderer, false);
                     ((WaypointConnection) wp).renderConnection(shapeRenderer, false);
                 }

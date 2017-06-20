@@ -44,7 +44,7 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
     boolean followPath;
     WaypointConnection currentConnection;
 
-    private float gravity = -0.18f;
+    private float gravity = GameScreen.gravity;
 
     public EnemyEntity(Texture spriteSheet, Vector2 start_pos) {
         super(start_pos);
@@ -69,7 +69,7 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
 
         vel.y += gravity * deltatime;
 
-        if(target.y != 0){
+        if (target.y != 0) {
             vel.y = target.y;
             target.y = 0;
         }
@@ -211,38 +211,39 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
             return null;
         if (path.size > 0) {
             if (currentConnection == null)
-                currentConnection = getNextValidConnection();
-            else if (hasReachedTargetNode(currentConnection.getToNode())) {
+                currentConnection = path.pop();
+            else if (hasReachedTargetNode(currentConnection.getToNode(), currentConnection.getFromNode())) {
                 if (currentConnection.getType() == WaypointConnection.ConnectionType.JUMP)
                     jump(currentConnection.getJump_force(), currentConnection.getxVel());
-                currentConnection = getNextValidConnection();
+                currentConnection = path.pop();
             }
             return currentConnection;
         } else {
             followPath = false;
-            currentConnection = null;
-            targetNode = null;
-            path = null;
             return null;
         }
     }
 
-    private WaypointConnection getNextValidConnection() {
-        WaypointConnection c = path.pop();
-        // Skip filler nodes, only move towards special nodes such as edge nodes
-        if (c.getType() == WaypointConnection.ConnectionType.JUMP)
-            return c;
-        //while (c.getToNode().getType() == WaypointNode.WayPointType.NORMAL && c.getToNode() != targetNode)
-         //   c = path.pop();
-        return c;
-    }
+    public boolean hasReachedTargetNode(WaypointNode targetNode, WaypointNode prevNode) {
+        float min_dist = 0.5f;
 
-    public boolean hasReachedTargetNode(WaypointNode targetNode) {
-        float min_dist = 0.1f;
-        if (Math.abs(pos.x - targetNode.getX()) < min_dist)
-            if (Math.abs(pos.y - targetNode.getY()) < min_dist)
-                return true;
-        return false;
+        // Check x pos
+        if (prevNode.getX() < targetNode.getX()) {
+            if (pos.x < targetNode.getX())
+                return false;
+        } else if (pos.x > targetNode.getX())
+            return false;
+
+        // Check y pos
+        if (Math.abs(pos.y - targetNode.getY()) < min_dist)
+            return true;
+        if (prevNode.getY() < targetNode.getY()) {
+            if (pos.y < targetNode.getY())
+                return false;
+        } else if (pos.y > targetNode.getY())
+            return false;
+
+        return true;
     }
 
     public void setDirection(Direction dir) {
@@ -252,5 +253,10 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
     public void jump(float jump_force, float xVel) {
         target.y = jump_force;
         target.x = xVel;
+    }
+
+    public boolean isOnGround() {
+        //TODO better way
+        return vel.y == 0;
     }
 }

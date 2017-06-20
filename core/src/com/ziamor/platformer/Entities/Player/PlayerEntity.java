@@ -20,8 +20,8 @@ public class PlayerEntity extends GameEntity implements Collidable, Damageable {
     final float player_width = GameScreen.unitScale * 100, player_height = GameScreen.unitScale * 160;
     final float groundColliderWidth = player_width, groundColliderHeight = GameScreen.unitScale * 2f;
 
-    private float jumpForce = 0.25f;
-    private float gravity = -0.0098f;
+    private float jumpForce = 0.37f;
+    private float gravity = GameScreen.gravity;
 
     private float currentHealth, maxHealth = 100, timeSinceLastDamage, damageImmunityTime = 1.5f;
     private boolean dead, damageImmune;
@@ -74,7 +74,7 @@ public class PlayerEntity extends GameEntity implements Collidable, Damageable {
 
         // Handle gravity
         if (!isOnGround())
-            vel.y += gravity;
+            vel.y += gravity * deltatime;
 
         // Check to see if we need to jump
         if (jump) {

@@ -49,7 +49,8 @@ public abstract class GameEntity {
         if (collider.overlaps(blocker)) {
             Vector2 shallowVector = collisionHelper.getShallowAxisVector(collider, blocker);
             if (shallowVector.x != 0) {
-                vel.x = 0;
+                if (Math.abs(shallowVector.x) > 0.02)
+                    vel.x = 0;
                 if (pos.x < blocker.x)
                     pos.x = blocker.x - collider.width;
                 else
