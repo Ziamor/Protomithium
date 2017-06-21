@@ -2,8 +2,6 @@ package com.ziamor.platformer.Entities.Enemies;
 
 import com.badlogic.gdx.ai.fsm.State;
 import com.badlogic.gdx.ai.msg.Telegram;
-import com.ziamor.platformer.Entities.GameEntity;
-import com.ziamor.platformer.engine.Pathfinding.WaypointNode;
 
 /**
  * Created by ziamor on 6/6/2017.
@@ -30,9 +28,10 @@ public enum EnemyState implements State<EnemyEntity> {
 
         @Override
         public void update(EnemyEntity enemyEntity) {
-            if (enemyEntity.isFollowing()) {
-                if (enemyEntity.getCurrentConnection() != null) {
-                    WaypointNode targetNode = enemyEntity.getCurrentConnection().getToNode();
+            /*if (enemyEntity.isFollowing()) {
+                WaypointConnection c = enemyEntity.getCurrentConnection();
+                if (c != null) {
+                    WaypointNode targetNode = c.getToNode();
                     if (targetNode != null) {
                         if (targetNode.getX() < enemyEntity.getPos().x)
                             enemyEntity.setDirection(GameEntity.Direction.LEFT);
@@ -40,13 +39,13 @@ public enum EnemyState implements State<EnemyEntity> {
                             enemyEntity.setDirection(GameEntity.Direction.RIGHT);
 
                         if (enemyEntity.isOnGround() && targetNode.getY() > enemyEntity.getPos().y)
-                            //enemyEntity.jump(0.37f, enemyEntity.maxX);
-                            enemyEntity.jump(0.32f, enemyEntity.maxX);
+                            enemyEntity.jump(0.37f, enemyEntity.maxX);
+                           //enemyEntity.jump(0.24f, enemyEntity.maxX);
                     }
                 }
                 enemyEntity.target.x = enemyEntity.maxX * enemyEntity.getDirectionFacingScale(); // TODO fix xvel
             } else
-                enemyEntity.target.x = 0;
+                enemyEntity.target.x = 0;*/
         }
     }, DEAD() {
         @Override

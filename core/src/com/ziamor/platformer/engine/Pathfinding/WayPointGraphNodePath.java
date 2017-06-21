@@ -45,4 +45,43 @@ public class WayPointGraphNodePath implements GraphPath<WaypointNode> {
     public Iterator<WaypointNode> iterator() {
         return nodes.iterator();
     }
+
+    public void simplifyPath() {
+        WaypointNode startNode = nodes.first();
+        WaypointNode endNode = nodes.get(nodes.size - 1);
+
+        Array<WaypointNode> nodesToKeep = new Array<WaypointNode>();
+        Array<WaypointNode> nodesToPrune = new Array<WaypointNode>();
+
+        for (WaypointNode n : nodes) {
+            nodesToPrune.add(n);
+        }
+
+        WaypointNode prevNode = startNode;
+        for (WaypointNode node : nodesToPrune) {
+            if (node != endNode) {
+                // Check if the prev node was a jump node, if so add it
+                if (prevNode.getZ() == 0 && node.getZ() != 0 && !nodesToKeep.contains(prevNode, false))
+                    nodesToKeep.add(prevNode);
+
+                    // Check if the node is the first air node
+                    // if (node.getZ() == 3)
+                    //    nodesToKeep.add(node);
+                    // Check if landing node
+                else if (prevNode.getZ() != 0 && node.getZ() == 0)
+                    nodesToKeep.add(node);
+                    // Check if at apex of jump
+                else if ((prevNode.getZ() < 6 && prevNode.getZ() > 0) && node.getZ() == 6)
+                    nodesToKeep.add(node);
+            }
+            prevNode = node;
+        }
+        nodesToKeep.add(endNode);
+
+        nodes.clear();
+        nodes.add(startNode);
+        for (WaypointNode node : nodesToKeep) {
+            nodes.add(node);
+        }
+    }
 }

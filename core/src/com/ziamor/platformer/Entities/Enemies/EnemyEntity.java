@@ -2,7 +2,6 @@ package com.ziamor.platformer.Entities.Enemies;
 
 import com.badlogic.gdx.ai.fsm.DefaultStateMachine;
 import com.badlogic.gdx.ai.fsm.StateMachine;
-import com.badlogic.gdx.ai.pfa.Connection;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -17,8 +16,7 @@ import com.ziamor.platformer.Entities.Player.PlayerEntity;
 import com.ziamor.platformer.GameScreen;
 import com.ziamor.platformer.engine.Collidable;
 import com.ziamor.platformer.engine.CollisionHelper;
-import com.ziamor.platformer.engine.Pathfinding.WayPointGraphConnectionPath;
-import com.ziamor.platformer.engine.Pathfinding.WaypointConnection;
+import com.ziamor.platformer.engine.Pathfinding.WayPointGraphNodePath;
 import com.ziamor.platformer.engine.Pathfinding.WaypointNode;
 
 /**
@@ -27,7 +25,7 @@ import com.ziamor.platformer.engine.Pathfinding.WaypointNode;
 public class EnemyEntity extends GameEntity implements Collidable, Damageable {
     private Direction dirFaceing;
     final int enemyValue = 500;
-    float enemyWidth = 0.75f, enemyHeight = 0.5f, maxX = 0.1f, deathTime, maxDeathTime = 3f;
+    float enemyWidth = 0.75f, enemyHeight = 0.5f, deathTime, maxDeathTime = 3f, maxX = 0.1f, jumpForce = 0.1f;
     float currentHealth, maxHealth = 1;
     boolean dead;
     Vector2 target;
@@ -38,13 +36,16 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
     TextureRegion currentFrame;
     Array<Rectangle> possibleCollisions;
 
-    WayPointGraphConnectionPath connectionPath;
-    WaypointNode targetNode;
-    Array<WaypointConnection> path;
     boolean followPath;
-    WaypointConnection currentConnection;
+    WaypointNode[] pathNodes;
+    WaypointNode targetNode = null;
+    WaypointNode curNode = null;
+    WaypointNode prevNode = null;
+    int pathIndex = 1;
 
     private float gravity = GameScreen.gravity;
+
+    Vector2 center;
 
     public EnemyEntity(Texture spriteSheet, Vector2 start_pos) {
         super(start_pos);
@@ -54,18 +55,21 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
         this.enemyAnimation = new EnemyAnimation(spriteSheet);
         this.possibleCollisions = new Array<Rectangle>();
         this.colliders = new Rectangle[]{enemyCollider};
+        center = new Vector2();
     }
 
     @Override
     public void update(float deltatime) {
         stateMachine.update();
+        updatePath();
 
         if (dead) {
             deathTime += deltatime;
             if (deathTime >= maxDeathTime)
                 this.dispose();
         } else
-            vel.x = vel.x * (1 - deltatime * 4) + target.x * (deltatime * 4);
+            //vel.x = vel.x * (1 - deltatime * 4) + target.x * (deltatime * 4);
+            vel.x = target.x;
 
         vel.y += gravity * deltatime;
 
@@ -78,6 +82,7 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
         pos.y += vel.y;
 
         updateColliders();
+        //Gdx.app.log("", vel.toString());
     }
 
     @Override
@@ -93,6 +98,7 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
 
     public void updateColliders() {
         enemyCollider.set(pos.x, pos.y, enemyWidth, enemyHeight);
+        enemyCollider.getCenter(center);
     }
 
     public Direction getDirFaceing() {
@@ -106,15 +112,13 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
             return 1;
     }
 
-    public void setConnectionPath(WayPointGraphConnectionPath connectionPath, WaypointNode targetNode) {
-        this.connectionPath = connectionPath;
+    public void setConnectionPath(WayPointGraphNodePath nodePath, WaypointNode targetNode) {
         this.followPath = true;
         this.targetNode = targetNode;
 
-        path = new Array<WaypointConnection>();
-        for (Connection<WaypointNode> c : connectionPath) {
-            path.add((WaypointConnection) c);
-        }
+        pathNodes = new WaypointNode[nodePath.getCount()];
+        for (int i = 0; i < pathNodes.length; i++)
+            pathNodes[i] = nodePath.get(i);
     }
 
     @Override
@@ -150,8 +154,8 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
         shapeRenderer.rect(enemyCollider.x, enemyCollider.y, enemyCollider.width, enemyCollider.height);
         shapeRenderer.end();
 
-        if (currentConnection != null)
-            currentConnection.getToNode().renderNode(shapeRenderer, true);
+        if (curNode != null)
+            curNode.renderNode(shapeRenderer, true);
     }
 
     public boolean isMoving() {
@@ -206,53 +210,58 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
         return followPath;
     }
 
-    public WaypointConnection getCurrentConnection() {
-        if (path == null)
-            return null;
-        if (path.size > 0) {
-            if (currentConnection == null)
-                currentConnection = path.pop();
-            else if (hasReachedTargetNode(currentConnection.getToNode(), currentConnection.getFromNode())) {
-                if (currentConnection.getType() == WaypointConnection.ConnectionType.JUMP)
-                    jump(currentConnection.getJump_force(), currentConnection.getxVel());
-                currentConnection = path.pop();
-            }
-            return currentConnection;
-        } else {
-            followPath = false;
-            return null;
+    private void updatePath() {
+        if (!isFollowing() || pathIndex > pathNodes.length) {
+            target.x = 0;
+            return;
         }
+
+        if (curNode == null) {
+            prevNode = pathNodes[0];
+            curNode = pathNodes[pathIndex];
+        } else if (hasReachedTargetNode(prevNode, curNode)) {
+            if (pathIndex + 1 >= pathNodes.length) {
+                target.x = 0;
+                return;
+            }
+            prevNode = pathNodes[pathIndex++];
+            curNode = pathNodes[pathIndex];
+        }
+
+        if (curNode.getCenterX() < center.x)
+            setDirection(GameEntity.Direction.LEFT);
+        else
+            setDirection(GameEntity.Direction.RIGHT);
+
+        if (curNode.getY() > pos.y)
+            target.y = jumpForce;
+        target.x = maxX * getDirectionFacingScale();
     }
 
-    public boolean hasReachedTargetNode(WaypointNode targetNode, WaypointNode prevNode) {
+    public boolean hasReachedTargetNode(WaypointNode prevNode, WaypointNode curNode) {
         float min_dist = 0.5f;
-
         // Check x pos
-        if (prevNode.getX() < targetNode.getX()) {
-            if (pos.x < targetNode.getX())
+        if (prevNode.getX() < curNode.getX()) {
+            if (center.x < curNode.getCenterX())
                 return false;
-        } else if (pos.x > targetNode.getX())
+        } else if (center.x > curNode.getCenterX())
             return false;
-
         // Check y pos
-        if (Math.abs(pos.y - targetNode.getY()) < min_dist)
+        if (Math.abs(center.y - curNode.getCenterY()) < min_dist)
             return true;
-        if (prevNode.getY() < targetNode.getY()) {
-            if (pos.y < targetNode.getY())
+        if (prevNode.getY() < curNode.getY()) {
+            if (center.y < curNode.getCenterY())
                 return false;
-        } else if (pos.y > targetNode.getY())
+        } else if (center.y > curNode.getCenterY())
             return false;
-
         return true;
     }
 
     public void setDirection(Direction dir) {
-        dirFaceing = dir;
-    }
-
-    public void jump(float jump_force, float xVel) {
-        target.y = jump_force;
-        target.x = xVel;
+        if (dir != dirFaceing) {
+            dirFaceing = dir;
+            vel.x = 0;//TODO look if this is a good idea}
+        }
     }
 
     public boolean isOnGround() {

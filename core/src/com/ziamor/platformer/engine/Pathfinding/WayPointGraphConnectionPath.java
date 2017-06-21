@@ -65,8 +65,8 @@ public class WayPointGraphConnectionPath implements GraphPath<Connection<Waypoin
                     nodesToKeep.add(prevNode);
 
                 // Check if the node is the first air node
-                if (node.getZ() == 3)
-                    nodesToKeep.add(node);
+               // if (node.getZ() == 3)
+                //    nodesToKeep.add(node);
                     // Check if landing node
                 else if (prevNode.getZ() != 0 && node.getZ() == 0)
                     nodesToKeep.add(node);
@@ -79,7 +79,6 @@ public class WayPointGraphConnectionPath implements GraphPath<Connection<Waypoin
         nodesToKeep.add(endNode);
 
         connections.clear();
-
         prevNode = startNode;
         for (WaypointNode node : nodesToKeep) {
             connections.add(new WaypointConnection(prevNode, node));

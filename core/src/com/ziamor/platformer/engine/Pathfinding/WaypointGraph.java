@@ -21,10 +21,10 @@ public class WaypointGraph implements IndexedGraph<WaypointNode> {
         this.level = level;
         this.unit_width = unit_width;
         this.unit_height = unit_height;
-        createGraph(gravity, jump_force, xVel, collisionHelper);
+        createGraph();
     }
 
-    public void createGraph(float gravity, float jump_force, float xVel, CollisionHelper collisionHelper) {
+    public void createGraph() {
         blockers = level.getBlockingMatrix();
         nodeMatrix = new WaypointNode[blockers.length][blockers[0].length][maxJumpValue * 2 + 1]; // plus one if for  odd state
         nodes = new Array<WaypointNode>();

@@ -10,14 +10,11 @@ public class WaypointConnection implements Connection<WaypointNode> {
 
     private WaypointNode fromNode, toNode;
     private ConnectionType type;
-    private float jump_force, xVel;
 
     public WaypointConnection(WaypointNode fromNode, WaypointNode toNode) {
         this.fromNode = fromNode;
         this.toNode = toNode;
         this.type = ConnectionType.JUMP;
-        //this.jump_force = jp.getJump_force();
-        //this.xVel = jp.xVel;
     }
 
     public void renderConnection(ShapeRenderer shapeRenderer, boolean isPath) {
@@ -43,14 +40,6 @@ public class WaypointConnection implements Connection<WaypointNode> {
 
     public ConnectionType getType() {
         return type;
-    }
-
-    public float getxVel() {
-        return xVel;
-    }
-
-    public float getJump_force() {
-        return jump_force;
     }
 
     @Override

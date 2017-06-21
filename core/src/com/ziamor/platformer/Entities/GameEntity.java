@@ -48,8 +48,9 @@ public abstract class GameEntity {
     protected void pushOutOfCollision(Rectangle collider, Rectangle blocker, CollisionHelper collisionHelper) {
         if (collider.overlaps(blocker)) {
             Vector2 shallowVector = collisionHelper.getShallowAxisVector(collider, blocker);
+            //Gdx.app.log("", collisionHelper.getPenetrationVector(collider, blocker).toString() + "\t\t" + vel.toString());
             if (shallowVector.x != 0) {
-                if (Math.abs(shallowVector.x) > 0.02)
+                //if (Math.abs(shallowVector.x) > 0.02)
                     vel.x = 0;
                 if (pos.x < blocker.x)
                     pos.x = blocker.x - collider.width;

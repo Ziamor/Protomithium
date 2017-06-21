@@ -108,6 +108,14 @@ public class WaypointNode {
         return (int) pos.z;
     }
 
+    public float getCenterX() {
+        return pos.x + 0.5f;
+    }
+
+    public float getCenterY() {
+        return pos.y + 0.5f;
+    }
+
     public Vector3 getVector() {
         return pos;
     }
