@@ -71,8 +71,12 @@ public class WayPointGraphNodePath implements GraphPath<WaypointNode> {
                 else if (prevNode.getZ() != 0 && node.getZ() == 0)
                     nodesToKeep.add(node);
                     // Check if at apex of jump
-                else if ((prevNode.getZ() < 6 && prevNode.getZ() > 0) && node.getZ() == 6)
+                else if ((prevNode.getZ() < 6 && prevNode.getZ() > 0) && node.getZ() == 6) {
+                    //TODO calc apex better
+                    if(!nodesToKeep.contains(prevNode, false))
+                        nodesToKeep.add(prevNode);
                     nodesToKeep.add(node);
+                }
             }
             prevNode = node;
         }

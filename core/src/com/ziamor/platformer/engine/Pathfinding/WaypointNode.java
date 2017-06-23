@@ -17,12 +17,12 @@ public class WaypointNode {
     private static int current_index = 0;
     private WayPointType type;
     private int index;
-    private Vector3 pos;
+    private Vector3 graphPos;
     private Array<Connection<WaypointNode>> connections;
 
     public WaypointNode(WayPointType type, int x, int y, int z) {
         this.type = type;
-        this.pos = new Vector3(x, y, z);
+        this.graphPos = new Vector3(x, y, z);
         this.index = current_index++;
         this.connections = new Array<Connection<WaypointNode>>();
     }
@@ -58,7 +58,7 @@ public class WaypointNode {
                     shapeRenderer.setColor(0.5f, 0.25f, 0f, 1f);
                     break;
             }*/
-            switch ((int) pos.z) {
+            switch ((int) graphPos.z) {
                 case 1:
                 case 3:
                     shapeRenderer.setColor(0f, 0, 1, 1f);
@@ -76,7 +76,7 @@ public class WaypointNode {
                     shapeRenderer.setColor(0f, 0f, 0f, 1f);
                     break;
             }
-        shapeRenderer.circle(pos.x + 0.5f, pos.y + 0.5f, 0.15f, 6);
+        shapeRenderer.circle(graphPos.x + 0.5f, graphPos.y + 0.5f, 0.15f, 6);
         shapeRenderer.end();
     }
 
@@ -97,27 +97,27 @@ public class WaypointNode {
     }
 
     public int getX() {
-        return (int) pos.x;
+        return (int) graphPos.x;
     }
 
     public int getY() {
-        return (int) pos.y;
+        return (int) graphPos.y;
     }
 
     public int getZ() {
-        return (int) pos.z;
+        return (int) graphPos.z;
     }
 
     public float getCenterX() {
-        return pos.x + 0.5f;
+        return graphPos.x + 0.5f;
     }
 
     public float getCenterY() {
-        return pos.y + 0.5f;
+        return graphPos.y + 0.5f;
     }
 
     public Vector3 getVector() {
-        return pos;
+        return graphPos;
     }
 
     public int getIndex() {

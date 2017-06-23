@@ -1,5 +1,6 @@
 package com.ziamor.platformer.Entities.Enemies;
 
+import com.badlogic.gdx.ai.btree.BehaviorTree;
 import com.badlogic.gdx.ai.fsm.DefaultStateMachine;
 import com.badlogic.gdx.ai.fsm.StateMachine;
 import com.badlogic.gdx.graphics.Texture;
@@ -16,8 +17,7 @@ import com.ziamor.platformer.Entities.Player.PlayerEntity;
 import com.ziamor.platformer.GameScreen;
 import com.ziamor.platformer.engine.Collidable;
 import com.ziamor.platformer.engine.CollisionHelper;
-import com.ziamor.platformer.engine.Pathfinding.WayPointGraphNodePath;
-import com.ziamor.platformer.engine.Pathfinding.WaypointNode;
+import com.ziamor.platformer.engine.Pathfinding.WaypointGraph;
 
 /**
  * Created by ziamor on 6/5/2017.
@@ -37,17 +37,20 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
     Array<Rectangle> possibleCollisions;
 
     boolean followPath;
-    WaypointNode[] pathNodes;
-    WaypointNode targetNode = null;
-    WaypointNode curNode = null;
-    WaypointNode prevNode = null;
-    int pathIndex = 1;
 
     private float gravity = GameScreen.gravity;
 
     Vector2 center;
 
-    public EnemyEntity(Texture spriteSheet, Vector2 start_pos) {
+    private BehaviorTree<EnemyEntity> behaviorTree;
+
+    CollisionHelper collisionHelper;
+    PlayerEntity player;
+
+    private PathFollower pathFollower;
+    private float max_pos_error;
+
+    public EnemyEntity(Texture spriteSheet, Vector2 start_pos, CollisionHelper collisionHelper, PlayerEntity player, WaypointGraph graph) {
         super(start_pos);
         this.target = new Vector2();
         this.enemyCollider = new Rectangle(pos.x, pos.y, enemyWidth, enemyHeight);
@@ -55,12 +58,20 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
         this.enemyAnimation = new EnemyAnimation(spriteSheet);
         this.possibleCollisions = new Array<Rectangle>();
         this.colliders = new Rectangle[]{enemyCollider};
-        center = new Vector2();
+        this.center = new Vector2();
+
+        this.collisionHelper = collisionHelper;
+        this.player = player;
+
+        this.max_pos_error = 0.5f;
+        this.pathFollower = new PathFollower(graph, max_pos_error);
+        followPath = pathFollower.findPath(start_pos, new Vector2(22, 3));
     }
 
     @Override
     public void update(float deltatime) {
         stateMachine.update();
+        //behaviorTree.step();
         updatePath();
 
         if (dead) {
@@ -112,15 +123,6 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
             return 1;
     }
 
-    public void setConnectionPath(WayPointGraphNodePath nodePath, WaypointNode targetNode) {
-        this.followPath = true;
-        this.targetNode = targetNode;
-
-        pathNodes = new WaypointNode[nodePath.getCount()];
-        for (int i = 0; i < pathNodes.length; i++)
-            pathNodes[i] = nodePath.get(i);
-    }
-
     @Override
     public float getCurrentHealth() {
         return currentHealth;
@@ -154,8 +156,7 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
         shapeRenderer.rect(enemyCollider.x, enemyCollider.y, enemyCollider.width, enemyCollider.height);
         shapeRenderer.end();
 
-        if (curNode != null)
-            curNode.renderNode(shapeRenderer, true);
+        pathFollower.debugRender(shapeRenderer);
     }
 
     public boolean isMoving() {
@@ -211,15 +212,15 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
     }
 
     private void updatePath() {
-        if (!isFollowing() || pathIndex > pathNodes.length) {
+        if (!isFollowing() || pathFollower.isDestReached()) {
             target.x = 0;
             return;
         }
 
-        if (curNode == null) {
+        /*if (curNode == null) {
             prevNode = pathNodes[0];
             curNode = pathNodes[pathIndex];
-        } else if (hasReachedTargetNode(prevNode, curNode)) {
+        } else if (pathFollower.hasReachedTargetNode(prevNode, curNode)) {
             if (pathIndex + 1 >= pathNodes.length) {
                 target.x = 0;
                 return;
@@ -235,26 +236,18 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
 
         if (curNode.getY() > pos.y)
             target.y = jumpForce;
-        target.x = maxX * getDirectionFacingScale();
-    }
+        target.x = maxX * getDirectionFacingScale();*/
+        Vector2 dest = pathFollower.getCurrentTarget(center);
+        if (dest != null) {
+            if (dest.x < center.x)
+                setDirection(GameEntity.Direction.LEFT);
+            else
+                setDirection(GameEntity.Direction.RIGHT);
 
-    public boolean hasReachedTargetNode(WaypointNode prevNode, WaypointNode curNode) {
-        float min_dist = 0.5f;
-        // Check x pos
-        if (prevNode.getX() < curNode.getX()) {
-            if (center.x < curNode.getCenterX())
-                return false;
-        } else if (center.x > curNode.getCenterX())
-            return false;
-        // Check y pos
-        if (Math.abs(center.y - curNode.getCenterY()) < min_dist)
-            return true;
-        if (prevNode.getY() < curNode.getY()) {
-            if (center.y < curNode.getCenterY())
-                return false;
-        } else if (center.y > curNode.getCenterY())
-            return false;
-        return true;
+            if (dest.y > center.y)// && dest.y - pos.y > max_pos_error)
+                target.y = jumpForce;
+            target.x = maxX * getDirectionFacingScale();
+        }
     }
 
     public void setDirection(Direction dir) {
@@ -267,5 +260,43 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
     public boolean isOnGround() {
         //TODO better way
         return vel.y == 0;
+    }
+
+    public void setTree(BehaviorTree<EnemyEntity> behaviorTree) {
+        this.behaviorTree = behaviorTree;
+    }
+
+    public void patrol() {
+        if (dirFaceing == null)
+            setDirection(Direction.RIGHT);
+        if (dirFaceing == Direction.RIGHT) {
+            if (!collisionHelper.isPlatform((int) (pos.x + 1), (int) (pos.y)))
+                dirFaceing = Direction.LEFT;
+        } else if (!collisionHelper.isPlatform((int) (pos.x - 1), (int) (pos.y)))
+            dirFaceing = Direction.RIGHT;
+
+        target.x = maxX * getDirectionFacingScale();
+    }
+
+    public boolean isPlayerNear() {
+        if (Math.abs(player.getPos().x - pos.x) < 2f)
+            if (Math.abs(player.getPos().y - pos.y) < 2f)
+                return true;
+        return false;
+    }
+
+    public boolean moveTowardsPlayer() {
+        if (enemyCollider.overlaps(player.getColliders()[0])) {
+            target.x = 0;
+            return true;
+        }
+
+        if (pos.x < player.getPos().x)
+            setDirection(Direction.RIGHT);
+        else
+            setDirection(Direction.LEFT);
+
+        target.x = maxX * getDirectionFacingScale();
+        return false;
     }
 }

@@ -28,24 +28,6 @@ public enum EnemyState implements State<EnemyEntity> {
 
         @Override
         public void update(EnemyEntity enemyEntity) {
-            /*if (enemyEntity.isFollowing()) {
-                WaypointConnection c = enemyEntity.getCurrentConnection();
-                if (c != null) {
-                    WaypointNode targetNode = c.getToNode();
-                    if (targetNode != null) {
-                        if (targetNode.getX() < enemyEntity.getPos().x)
-                            enemyEntity.setDirection(GameEntity.Direction.LEFT);
-                        else
-                            enemyEntity.setDirection(GameEntity.Direction.RIGHT);
-
-                        if (enemyEntity.isOnGround() && targetNode.getY() > enemyEntity.getPos().y)
-                            enemyEntity.jump(0.37f, enemyEntity.maxX);
-                           //enemyEntity.jump(0.24f, enemyEntity.maxX);
-                    }
-                }
-                enemyEntity.target.x = enemyEntity.maxX * enemyEntity.getDirectionFacingScale(); // TODO fix xvel
-            } else
-                enemyEntity.target.x = 0;*/
         }
     }, DEAD() {
         @Override

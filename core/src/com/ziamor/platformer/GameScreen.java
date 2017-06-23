@@ -3,6 +3,8 @@ package com.ziamor.platformer;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.ai.btree.BehaviorTree;
+import com.badlogic.gdx.ai.btree.utils.BehaviorTreeParser;
 import com.badlogic.gdx.ai.pfa.indexed.IndexedAStarPathFinder;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
@@ -21,6 +23,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.ProgressBar;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.StreamUtils;
 import com.ziamor.platformer.Entities.Enemies.EnemyEntity;
 import com.ziamor.platformer.Entities.GameEntity;
 import com.ziamor.platformer.Entities.Items.Coin;
@@ -33,6 +36,8 @@ import com.ziamor.platformer.engine.Pathfinding.WayPointHeuristic;
 import com.ziamor.platformer.engine.Pathfinding.WaypointGraph;
 import com.ziamor.platformer.engine.Pathfinding.WaypointNode;
 import com.ziamor.platformer.engine.TargetOrthographicCamera;
+
+import java.io.Reader;
 
 public class GameScreen implements Screen {
     public static float unitScale = 1 / 128f, gravity = -0.98f;
@@ -119,21 +124,24 @@ public class GameScreen implements Screen {
         enemySpriteSheet = new Texture("spritesheet_enemies.png");
         itemSpriteSheet = new Texture("spritesheet_items.png");
 
+        collisionHelper = new CollisionHelper(tiledMap);
+
+        level = new GameLevel(mapWidth, mapHeight, tiledMap);
+        graph = new WaypointGraph(level, 3);
+
         playerEntity = new PlayerEntity(playerSpriteSheet, new Vector2(6, 5));
-        // enemyEntity = new EnemyEntity(enemySpriteSheet, new Vector2(20, 5));
+        enemyEntity = new EnemyEntity(enemySpriteSheet, new Vector2(8, 12), collisionHelper, playerEntity,graph);
         inputProcessor = new PlayerInputProcessor(playerEntity);
         inputMultiplexer.addProcessor(inputProcessor);
 
         Gdx.input.setInputProcessor(inputMultiplexer);
 
-        collisionHelper = new CollisionHelper(tiledMap);
-
         itemTextures = TextureRegion.split(itemSpriteSheet, 128, 128);
 
         entities = new Array<GameEntity>();
         collidables = new Array<com.ziamor.platformer.engine.Collidable>();
-        //addEntity(playerEntity);
-        //addEntity(enemyEntity);
+        addEntity(playerEntity);
+        addEntity(enemyEntity);
         addEntity(new Coin(itemTextures, new Vector2(68, 5)));
 
         camera.setTarget(playerEntity);
@@ -141,12 +149,7 @@ public class GameScreen implements Screen {
         healthBar.setValue(playerEntity.getCurrentHealth());
         healthBar.setAnimateDuration(1);
 
-        level = new GameLevel(mapWidth, mapHeight, tiledMap);
-        graph = new WaypointGraph(level, -0.0098f, 0.25f, 0.15f, 0.75f, 0.5f, collisionHelper);
-        pathFinder = new IndexedAStarPathFinder<WaypointNode>(graph);
-        heuristic = new WayPointHeuristic();
-        path = new WayPointGraphNodePath();
-        WaypointNode start = graph.getNode(8, 12, 0);
+        /*WaypointNode start = graph.getNode(8, 12, 0);
         WaypointNode end = graph.getNode(22, 3, 0);
         isPathFound = pathFinder.searchNodePath(start, end, heuristic, path);
         if (isPathFound) {
@@ -154,6 +157,16 @@ public class GameScreen implements Screen {
             EnemyEntity test = new EnemyEntity(enemySpriteSheet, new Vector2(start.getX(), start.getY()));
             addEntity(test);
             test.setConnectionPath(path, end);
+        }*/
+
+        Reader reader = null;
+        try {
+            reader = Gdx.files.internal("enemy.tree").reader();
+            BehaviorTreeParser<EnemyEntity> parser = new BehaviorTreeParser<EnemyEntity>();
+            BehaviorTree<EnemyEntity> tree = parser.parse(reader, enemyEntity);
+            enemyEntity.setTree(tree);
+        } finally {
+            StreamUtils.closeQuietly(reader);
         }
     }
 
@@ -246,16 +259,16 @@ public class GameScreen implements Screen {
 
             //graph.debugRender(shapeRenderer);
 
-            if (isPathFound) {
-                /*path.get(0).getFromNode().renderNode(shapeRenderer, false);
+            /*if (isPathFound) {
+                path.get(0).getFromNode().renderNode(shapeRenderer, false);
                 for (Connection<WaypointNode> wp : path) {
                     wp.getToNode().renderNode(shapeRenderer, false);
                     ((WaypointConnection) wp).renderConnection(shapeRenderer, false);
-                }*/
+                }
                 for (WaypointNode n : path) {
                     n.renderNode(shapeRenderer, false);
                 }
-            }
+            }*/
 
             for (GameEntity ent : entities)
                 ent.debugRender(delta, shapeRenderer);

@@ -4,7 +4,6 @@ import com.badlogic.gdx.ai.pfa.Connection;
 import com.badlogic.gdx.ai.pfa.indexed.IndexedGraph;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.Array;
-import com.ziamor.platformer.engine.CollisionHelper;
 import com.ziamor.platformer.engine.GameLevel;
 
 public class WaypointGraph implements IndexedGraph<WaypointNode> {
@@ -13,14 +12,12 @@ public class WaypointGraph implements IndexedGraph<WaypointNode> {
     private boolean[][] blockers;
     private WaypointNode[][][] nodeMatrix;
     private Array<WaypointNode> nodes;
-    private float unit_width, unit_height;
 
-    private int maxJumpValue = 3 * 2;//TODO get jump height
+    private int maxJumpValue;
 
-    public WaypointGraph(GameLevel level, float gravity, float jump_force, float xVel, float unit_width, float unit_height, CollisionHelper collisionHelper) {
+    public WaypointGraph(GameLevel level, int maxJumpHeight) {
         this.level = level;
-        this.unit_width = unit_width;
-        this.unit_height = unit_height;
+        this.maxJumpValue = maxJumpHeight * 2;
         createGraph();
     }
 

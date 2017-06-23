@@ -57,4 +57,13 @@ public class CollisionHelper {
         }
         return possibleCollisions;
     }
+
+    public boolean isPlatform(int x, int y) {
+        TiledMapTileLayer layer = (TiledMapTileLayer) tiledMap.getLayers().get("walls");
+        if (layer.getCell(x, y) != null)
+            return false;
+        if (layer.getCell(x, y - 1) != null)
+            return true;
+        return false;
+    }
 }
