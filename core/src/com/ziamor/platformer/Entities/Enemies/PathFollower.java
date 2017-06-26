@@ -137,8 +137,8 @@ public class PathFollower {
             for (WaypointNode n : path) {
                 n.renderNode(shapeRenderer, false);
             }
+            if (curNode != null)
+                curNode.renderNode(shapeRenderer, true);
         }
-        if (curNode != null)
-            curNode.renderNode(shapeRenderer, true);
     }
 }

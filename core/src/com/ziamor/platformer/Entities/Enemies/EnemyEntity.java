@@ -36,7 +36,7 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
     TextureRegion currentFrame;
     Array<Rectangle> possibleCollisions;
 
-    boolean followPath;
+    boolean isFollowingPath;
 
     private float gravity = GameScreen.gravity;
 
@@ -65,14 +65,13 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
 
         this.max_pos_error = 0.5f;
         this.pathFollower = new PathFollower(graph, max_pos_error);
-        followPath = pathFollower.findPath(start_pos, new Vector2(22, 3));
     }
 
     @Override
     public void update(float deltatime) {
         stateMachine.update();
-        //behaviorTree.step();
-        updatePath();
+        behaviorTree.step();
+        //updatePath();
 
         if (dead) {
             deathTime += deltatime;
@@ -208,46 +207,7 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
     }
 
     public boolean isFollowing() {
-        return followPath;
-    }
-
-    private void updatePath() {
-        if (!isFollowing() || pathFollower.isDestReached()) {
-            target.x = 0;
-            return;
-        }
-
-        /*if (curNode == null) {
-            prevNode = pathNodes[0];
-            curNode = pathNodes[pathIndex];
-        } else if (pathFollower.hasReachedTargetNode(prevNode, curNode)) {
-            if (pathIndex + 1 >= pathNodes.length) {
-                target.x = 0;
-                return;
-            }
-            prevNode = pathNodes[pathIndex++];
-            curNode = pathNodes[pathIndex];
-        }
-
-        if (curNode.getCenterX() < center.x)
-            setDirection(GameEntity.Direction.LEFT);
-        else
-            setDirection(GameEntity.Direction.RIGHT);
-
-        if (curNode.getY() > pos.y)
-            target.y = jumpForce;
-        target.x = maxX * getDirectionFacingScale();*/
-        Vector2 dest = pathFollower.getCurrentTarget(center);
-        if (dest != null) {
-            if (dest.x < center.x)
-                setDirection(GameEntity.Direction.LEFT);
-            else
-                setDirection(GameEntity.Direction.RIGHT);
-
-            if (dest.y > center.y)// && dest.y - pos.y > max_pos_error)
-                target.y = jumpForce;
-            target.x = maxX * getDirectionFacingScale();
-        }
+        return isFollowingPath;
     }
 
     public void setDirection(Direction dir) {
@@ -267,20 +227,27 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
     }
 
     public void patrol() {
+        float speed_mod = 0.5f;
         if (dirFaceing == null)
             setDirection(Direction.RIGHT);
-        if (dirFaceing == Direction.RIGHT) {
-            if (!collisionHelper.isPlatform((int) (pos.x + 1), (int) (pos.y)))
-                dirFaceing = Direction.LEFT;
-        } else if (!collisionHelper.isPlatform((int) (pos.x - 1), (int) (pos.y)))
-            dirFaceing = Direction.RIGHT;
 
-        target.x = maxX * getDirectionFacingScale();
+        if (dirFaceing == Direction.RIGHT) {
+            int platformX = (int) (pos.x + 1);
+            if (!collisionHelper.isPlatform(platformX, (int) (pos.y)) && pos.x + enemyWidth >= platformX)
+                dirFaceing = Direction.LEFT;
+        } else {
+            int platformX = (int) (pos.x - 1);
+            if (!collisionHelper.isPlatform(platformX, (int) (pos.y)) && pos.x <= (int) pos.x)
+                dirFaceing = Direction.RIGHT;
+        }
+
+        target.x = maxX * speed_mod * getDirectionFacingScale();
     }
 
     public boolean isPlayerNear() {
-        if (Math.abs(player.getPos().x - pos.x) < 2f)
-            if (Math.abs(player.getPos().y - pos.y) < 2f)
+        float min_dist = 3f;
+        if (Math.abs(player.getPos().x - pos.x) < min_dist)
+            if (Math.abs(player.getPos().y - pos.y) < min_dist)
                 return true;
         return false;
     }
@@ -298,5 +265,36 @@ public class EnemyEntity extends GameEntity implements Collidable, Damageable {
 
         target.x = maxX * getDirectionFacingScale();
         return false;
+    }
+
+    public boolean getPathToPlayer() {
+        if (player == null)
+            return false;
+        isFollowingPath = pathFollower.findPath(pos, player.getPos());
+        return isFollowingPath;
+    }
+
+    public boolean isDestReached() {
+        return pathFollower.isDestReached();
+    }
+
+    public boolean followPath() {
+        if (!isFollowing() || pathFollower.isDestReached()) {
+            target.x = 0;
+            return false;
+        }
+
+        Vector2 dest = pathFollower.getCurrentTarget(center);
+        if (dest != null) {
+            if (dest.x < center.x)
+                setDirection(GameEntity.Direction.LEFT);
+            else
+                setDirection(GameEntity.Direction.RIGHT);
+
+            if (dest.y > center.y)// && dest.y - pos.y > max_pos_error)
+                target.y = jumpForce;
+            target.x = maxX * getDirectionFacingScale();
+        }
+        return true;
     }
 }

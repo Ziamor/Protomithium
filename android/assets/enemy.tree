@@ -1,0 +1,13 @@
+import patrol:"com.ziamor.platformer.Entities.Enemies.PatrolTask"
+import isPlayerNear:"com.ziamor.platformer.Entities.Enemies.IsPlayerInRangeTask"
+import moveToPlayer:"com.ziamor.platformer.Entities.Enemies.MoveToPlayerTask"
+import findPath:"com.ziamor.platformer.Entities.Enemies.FindPathTask"
+import followPath:"com.ziamor.platformer.Entities.Enemies.FollowPathTask"
+
+root
+	selector
+		sequence
+			isPlayerNear
+			findPath
+			followPath
+		patrol

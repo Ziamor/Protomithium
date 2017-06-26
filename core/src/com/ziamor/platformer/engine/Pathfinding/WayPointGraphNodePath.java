@@ -47,6 +47,9 @@ public class WayPointGraphNodePath implements GraphPath<WaypointNode> {
     }
 
     public void simplifyPath() {
+        if (nodes.size < 2)
+            return;
+
         WaypointNode startNode = nodes.first();
         WaypointNode endNode = nodes.get(nodes.size - 1);
 
@@ -58,6 +61,10 @@ public class WayPointGraphNodePath implements GraphPath<WaypointNode> {
         }
 
         WaypointNode prevNode = startNode;
+
+        //TDO get values
+        double maxJump = 6;
+
         for (WaypointNode node : nodesToPrune) {
             if (node != endNode) {
                 // Check if the prev node was a jump node, if so add it
@@ -71,12 +78,10 @@ public class WayPointGraphNodePath implements GraphPath<WaypointNode> {
                 else if (prevNode.getZ() != 0 && node.getZ() == 0)
                     nodesToKeep.add(node);
                     // Check if at apex of jump
-                else if ((prevNode.getZ() < 6 && prevNode.getZ() > 0) && node.getZ() == 6) {
-                    //TODO calc apex better
-                    if(!nodesToKeep.contains(prevNode, false))
+                else if ((prevNode.getZ() < maxJump && prevNode.getZ() > 0) && node.getZ() == maxJump + 2)
+                    if (!nodesToKeep.contains(prevNode, false))
                         nodesToKeep.add(prevNode);
-                    nodesToKeep.add(node);
-                }
+
             }
             prevNode = node;
         }

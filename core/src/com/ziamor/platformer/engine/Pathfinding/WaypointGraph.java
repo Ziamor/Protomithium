@@ -23,7 +23,7 @@ public class WaypointGraph implements IndexedGraph<WaypointNode> {
 
     public void createGraph() {
         blockers = level.getBlockingMatrix();
-        nodeMatrix = new WaypointNode[blockers.length][blockers[0].length][maxJumpValue * 2 + 1]; // plus one if for  odd state
+        nodeMatrix = new WaypointNode[blockers.length][blockers[0].length][maxJumpValue * 2 + 2]; // plus one if for  odd state
         nodes = new Array<WaypointNode>();
 
         // Start by creating unconnected nodes in spaces that are not blocked
@@ -53,7 +53,7 @@ public class WaypointGraph implements IndexedGraph<WaypointNode> {
                         continue;
                     }
 
-                    WaypointNode downNode = getNode(x, y - 1, maxJumpValue);
+                    WaypointNode downNode = getNode(x, y - 1, maxJumpValue + 2);
                     WaypointNode upNode = null;
                     WaypointNode leftNode = null;
                     WaypointNode rightNode = null;
@@ -76,7 +76,7 @@ public class WaypointGraph implements IndexedGraph<WaypointNode> {
                             // z is odd
                             upNode = getNode(x, y + 1, z + 1);
                         }
-                    } else if (z == maxJumpValue) {
+                    } else if (z > maxJumpValue + 1) {
                         if (isPlatform(x - 1, y))
                             leftNode = getNode(x - 1, y, 0);
                         else

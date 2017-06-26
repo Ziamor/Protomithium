@@ -130,7 +130,7 @@ public class GameScreen implements Screen {
         graph = new WaypointGraph(level, 3);
 
         playerEntity = new PlayerEntity(playerSpriteSheet, new Vector2(6, 5));
-        enemyEntity = new EnemyEntity(enemySpriteSheet, new Vector2(8, 12), collisionHelper, playerEntity,graph);
+        enemyEntity = new EnemyEntity(enemySpriteSheet, new Vector2(18, 3), collisionHelper, playerEntity,graph);
         inputProcessor = new PlayerInputProcessor(playerEntity);
         inputMultiplexer.addProcessor(inputProcessor);
 
@@ -148,16 +148,6 @@ public class GameScreen implements Screen {
         healthBar.setRange(0, playerEntity.getMaxHealth());
         healthBar.setValue(playerEntity.getCurrentHealth());
         healthBar.setAnimateDuration(1);
-
-        /*WaypointNode start = graph.getNode(8, 12, 0);
-        WaypointNode end = graph.getNode(22, 3, 0);
-        isPathFound = pathFinder.searchNodePath(start, end, heuristic, path);
-        if (isPathFound) {
-            path.simplifyPath();
-            EnemyEntity test = new EnemyEntity(enemySpriteSheet, new Vector2(start.getX(), start.getY()));
-            addEntity(test);
-            test.setConnectionPath(path, end);
-        }*/
 
         Reader reader = null;
         try {
